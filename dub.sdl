@@ -1,0 +1,5 @@
+name "lgj2019"
+
+dependency "d2dgame" path="D2DGame"
+
+versions "BindSDL_Image" "BindSDL_Mixer"

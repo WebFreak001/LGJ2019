@@ -1,0 +1,9 @@
+.dub
+/lgj2019
+*.exe
+*.o
+*.a
+*.so
+*.dll
+*-test-*
+dub.selections.json

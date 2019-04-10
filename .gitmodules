@@ -1,0 +1,3 @@
+[submodule "D2DGame"]
+	path = D2DGame
+	url = https://github.com/WebFreak001/D2DGame.git
