@@ -52,6 +52,7 @@ public:
 	override void draw()
 	{
 		window.clear(0, 0, 0);
+		matrixStack.top = mat4.scaling(2, 2, 2);
 
 		spriteBatch.begin(R.spritesheet.textures[0]);
 
