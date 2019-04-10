@@ -1,9 +1,12 @@
 import d2d;
 
+import resources;
+
 class Game1 : Game
 {
 private:
 	bool paused;
+	SpriteBatch spriteBatch;
 
 protected:
 	override void onEvent(Event event)
@@ -35,6 +38,9 @@ public:
 
 	override void load()
 	{
+		R.load();
+
+		spriteBatch = new SpriteBatch();
 	}
 
 	override void update(float delta)
@@ -46,6 +52,13 @@ public:
 	override void draw()
 	{
 		window.clear(0, 0, 0);
+
+		spriteBatch.begin(R.spritesheet.textures[0]);
+
+		spriteBatch.drawSprite(R.sprites.player, vec2(16, 16));
+
+		spriteBatch.end();
+		window.draw(spriteBatch);
 	}
 }
 
