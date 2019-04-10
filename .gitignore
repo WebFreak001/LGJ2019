@@ -7,6 +7,4 @@
 *.dll
 *-test-*
 dub.selections.json
-res/spritesheet.bin
 res/spritesheet.hash
-res/spritesheet*.png
