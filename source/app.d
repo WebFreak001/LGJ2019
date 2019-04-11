@@ -2,14 +2,17 @@ import d2d;
 
 import resources;
 
+import game.components;
+import game.systems;
 import game.world;
 
 class Game1 : Game
 {
 private:
 	bool paused;
-	SpriteBatch spriteBatch;
-	World world;
+	GameWorld world;
+
+	DrawSystem drawSystem;
 
 protected:
 	override void onEvent(Event event)
@@ -36,18 +39,25 @@ protected:
 			case SDLK_SPACE:
 				writeln("spawning projectile");
 
-				Entity e = new Entity();
-				e.dead = true;
+				auto entity = world.putEntity(PositionComponent(vec2(100, 100)),
+						DisplayComponent(R.sprites.white4x, vec4(1, 1, 1, 0.5f)));
 
-				world.entities ~= e;
-				world.put(History(world.now + 1, world.now + 3, () {
+				world.put(History(world.now, world.now + 2, () {
 						writeln("unstart");
-						e.dead = true;
-					}, () { writeln("restart"); e.dead = false; }, () {
+						world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
+					}, () {
+						writeln("restart");
+						world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
+					}, () {
 						writeln("finish");
-						e.dead = true;
-					}, () { writeln("unfinish"); e.dead = false; }, (p, d) {
-						e.position = vec2(20 + p * 200, 50);
+						world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
+					}, () {
+						writeln("unfinish");
+						world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
+					}, (p, d) {
+						world.editEntity!((ref entity) {
+							entity.write(PositionComponent(vec2(20 + p * 200, 50)));
+						})(entity);
 					}));
 				break;
 			default:
@@ -69,8 +79,7 @@ public:
 	override void load()
 	{
 		R.load();
-
-		spriteBatch = new SpriteBatch();
+		drawSystem.load();
 	}
 
 	override void update(float delta)
@@ -87,23 +96,7 @@ public:
 		matrixStack.top = mat4.scaling(2, 2, 2);
 		// screen size is 400x304 now
 
-		spriteBatch.begin(R.spritesheet.textures[0]);
-
-		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0), vec2(200, 304) / 4.0f, vec4(1, 0, 0, 1));
-		spriteBatch.drawSprite(R.sprites.white4x, vec2(200, 0), vec2(200, 304) / 4.0f, vec4(0, 0, 1, 1));
-
-		spriteBatch.drawSprite(R.sprites.player, vec2(16, 16));
-
-		foreach (entity; world.entities)
-		{
-			if (entity.dead)
-				continue;
-
-			spriteBatch.drawSprite(R.sprites.player, entity.position);
-		}
-
-		spriteBatch.end();
-		spriteBatch.draw(window);
+		drawSystem.draw(world, window);
 	}
 }
 
