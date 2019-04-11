@@ -12,58 +12,15 @@ private:
 	bool paused;
 	GameWorld world;
 
+	Controls controls;
 	DrawSystem drawSystem;
 
 protected:
 	override void onEvent(Event event)
 	{
-		import std.stdio : writeln;
-
 		super.onEvent(event);
 
-		if (event.type == Event.Type.KeyPressed)
-		{
-			switch (event.key)
-			{
-			case SDLK_p:
-				paused = !paused;
-				break;
-			case SDLK_LEFTBRACKET:
-				writeln("slower");
-				world.speed -= 0.3f;
-				break;
-			case SDLK_RIGHTBRACKET:
-				writeln("faster");
-				world.speed += 0.3f;
-				break;
-			case SDLK_SPACE:
-				writeln("spawning projectile");
-
-				auto entity = world.putEntity(PositionComponent(vec2(100, 100)),
-						DisplayComponent(R.sprites.white4x, vec4(1, 1, 1, 0.5f)));
-
-				world.put(History(world.now, world.now + 2, () {
-						writeln("unstart");
-						world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
-					}, () {
-						writeln("restart");
-						world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
-					}, () {
-						writeln("finish");
-						world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
-					}, () {
-						writeln("unfinish");
-						world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
-					}, (p, d) {
-						world.editEntity!((ref entity) {
-							entity.write(PositionComponent(vec2(20 + p * 200, 50)));
-						})(entity);
-					}));
-				break;
-			default:
-				break;
-			}
-		}
+		controls.handleEvent(world, event);
 	}
 
 public:
@@ -80,6 +37,9 @@ public:
 	{
 		R.load();
 		drawSystem.load();
+
+		controls.player = world.putEntity(PositionComponent(vec2(200, 152)),
+				ComplexDisplayComponent(R.sprites.player));
 	}
 
 	override void update(float delta)
@@ -87,7 +47,10 @@ public:
 		if (paused)
 			return;
 
+		auto dt = delta * world.speed;
 		world.update(delta);
+
+		controls.update(world, dt);
 	}
 
 	override void draw()

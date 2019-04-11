@@ -17,7 +17,17 @@ struct DisplayComponent
 	vec4 color = vec4(1);
 }
 
-alias GameWorld = World!(PositionComponent, DisplayComponent);
+struct ComplexDisplayComponent
+{
+	Crunch.Image sprite;
+	vec2 scale = vec2(1);
+	float rotation = 0;
+	DrawOrigin origin = DrawOrigin.middleCenter;
+	vec2 originOffset = vec2(1);
+	vec4 color = vec4(1);
+}
+
+alias GameWorld = World!(PositionComponent, DisplayComponent, ComplexDisplayComponent);
 
 void editEntity(alias callback)(ref GameWorld world, Entity entity)
 {

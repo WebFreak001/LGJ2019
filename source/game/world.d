@@ -100,6 +100,8 @@ struct Entity
 
 struct World(Components...)
 {
+	static assert(Components.length <= 32, "Can manage at most 32 components");
+
 	@disable this(this);
 
 	double now() @property const
@@ -142,6 +144,14 @@ struct World(Components...)
 			static assert(index != -1, "Component " ~ Component.stringof ~ " is not registered!");
 
 			return entity.hasComponentIndex(index) ? &components[index] : null;
+		}
+
+		ref Component force(Component)()
+		{
+			enum index = staticIndexOf!(Component, Components);
+			static assert(index != -1, "Component " ~ Component.stringof ~ " is not registered!");
+			assert(entity.hasComponentIndex(index));
+			return components[index];
 		}
 	}
 
