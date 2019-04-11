@@ -23,7 +23,7 @@ struct Controls
 	double shootCooldown = 0.1; // seconds
 	double speed = 100;
 
-    // Debug
+	// Debug
 	SDL_Keycode speedUpKey = SDLK_k;
 	SDL_Keycode speedDownKey = SDLK_j;
 
@@ -35,12 +35,12 @@ struct Controls
 			shoot(world);
 		if (event.type == Event.Type.KeyPressed && event.key == speedUpKey)
 		{
-            world.speed += 0.25f;
+			world.speed += 0.25f;
 			writeln("World speed up (", world.speed, ")");
 		}
 		if (event.type == Event.Type.KeyPressed && event.key == speedDownKey)
 		{
-            world.speed -= 0.25f;
+			world.speed -= 0.25f;
 			writeln("World speed down (", world.speed, ")");
 		}
 	}
