@@ -176,7 +176,7 @@ struct World
 			// so breaking on the first expired one from reverse wouldn't work.
 			foreach_reverse (i, ref unhappened; events[0 .. eventEndIndex])
 			{
-				if (!unhappened.finished || unhappened.end >= time)
+				if (!unhappened.finished || unhappened.end <= time)
 					continue;
 
 				unhappened.finished = false;
