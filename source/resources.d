@@ -6,7 +6,7 @@ import std.exception;
 
 struct Resources
 {
-	alias usedSprites = AliasSeq!("player");
+	alias usedSprites = AliasSeq!("player", "white", "white2x", "white4x");
 
 	Spritesheet spritesheet;
 	// magically wraps all the used sprites as easy to access variables
