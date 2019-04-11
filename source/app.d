@@ -1,5 +1,4 @@
 import d2d;
-import std.stdio;
 
 import resources;
 
@@ -26,13 +25,13 @@ protected:
 			case SDLK_p:
 				paused = !paused;
 				break;
-			case SDLK_j:
-				world.speed -= 0.25f;
-				writeln("slower (", world.speed, ")");
+			case SDLK_LEFTBRACKET:
+				writeln("slower");
+				world.speed -= 0.3f;
 				break;
-			case SDLK_k:
-				world.speed += 0.25;
-				writeln("faster (", world.speed, ")");
+			case SDLK_RIGHTBRACKET:
+				writeln("faster");
+				world.speed += 0.3f;
 				break;
 			case SDLK_SPACE:
 				writeln("spawning projectile");
@@ -51,38 +50,6 @@ protected:
 						e.position = vec2(20 + p * 200, 50);
 					}));
 				break;
-			case SDLK_DOWN:
-				world.player.velocity.y = 1;
-				break;
-			case SDLK_UP:
-				world.player.velocity.y = -1;
-				break;
-			case SDLK_LEFT:
-				world.player.velocity.x = -1;
-				break;
-			case SDLK_RIGHT:
-				world.player.velocity.x = 1;
-				break;
-			default:
-				break;
-			}
-		} 
-		else if (event.type == Event.Type.KeyReleased)
-		{
-			switch (event.key)
-			{
-			case SDLK_DOWN:
-				world.player.velocity.y = 0;
-				break;
-			case SDLK_UP:
-				world.player.velocity.y = 0;
-				break;
-			case SDLK_LEFT:
-				world.player.velocity.x = 0;
-				break;
-			case SDLK_RIGHT:
-				world.player.velocity.x = 0;
-				break;
 			default:
 				break;
 			}
@@ -97,10 +64,6 @@ public:
 		windowHeight = 608;
 		windowTitle = "LGJ2019";
 		maxFPS = 120;
-		world.player = new Player();
-		world.player.position = vec2(20, 70);
-		world.player.speed = 2;
-		world.player.velocity = vec2(0,0);
 	}
 
 	override void load()
@@ -115,7 +78,6 @@ public:
 		if (paused)
 			return;
 
-		world.player.updatePosition();
 		world.update(delta);
 	}
 
@@ -139,8 +101,6 @@ public:
 
 			spriteBatch.drawSprite(R.sprites.player, entity.position);
 		}
-		spriteBatch.drawSprite(R.sprites.player, world.player.position);
-		writeln(world.player.velocity);
 
 		spriteBatch.end();
 		spriteBatch.draw(window);

@@ -65,18 +65,6 @@ class Entity
 	vec2 position;
 }
 
-class Player
-{
-	vec2 position;
-	int speed;
-	vec2 velocity;
-
-	void updatePosition()
-	{
-		position += velocity.normalized() * speed; 
-	}
-}
-
 struct World
 {
 	@disable this(this);
@@ -94,7 +82,6 @@ struct World
 	ptrdiff_t eventEndIndex;
 
 	Entity[] entities;
-	Player player;
 
 	void put(History event)
 	{
