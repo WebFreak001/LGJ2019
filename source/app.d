@@ -85,8 +85,12 @@ public:
 	{
 		window.clear(0, 0, 0);
 		matrixStack.top = mat4.scaling(2, 2, 2);
+		// screen size is 400x304 now
 
 		spriteBatch.begin(R.spritesheet.textures[0]);
+
+		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0), vec2(200, 304) / 4.0f, vec4(1, 0, 0, 1));
+		spriteBatch.drawSprite(R.sprites.white4x, vec2(200, 0), vec2(200, 304) / 4.0f, vec4(0, 0, 1, 1));
 
 		spriteBatch.drawSprite(R.sprites.player, vec2(16, 16));
 
@@ -99,7 +103,7 @@ public:
 		}
 
 		spriteBatch.end();
-		window.draw(spriteBatch);
+		spriteBatch.draw(window);
 	}
 }
 
