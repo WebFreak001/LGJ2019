@@ -119,8 +119,8 @@ struct Controls
 
 		vec2 start = world.entities[world.getEntity(player)].read!PositionComponent.position;
 
-		new LinearBulletEntity(CollisionComponent.Mask.playerShot,
-				R.sprites.bullet, vec2(300, 0), vec2(1), vec4(0, 1, 0, 1)).create(world, start, 0, 2);
+		new QuadraticBulletEntity(CollisionComponent.Mask.playerShot,
+				R.sprites.lazer, vec2(400, 0), vec2(1), vec4(1, 0, 0, 1)).create(world, start, 0, 2);
 	}
 }
 

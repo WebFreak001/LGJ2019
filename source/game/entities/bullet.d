@@ -99,7 +99,7 @@ class DirectionalDrawableHistoryEntity(alias interp) : DrawableHistoryEntity
 
 	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1))
 	{
-		float rotation = atan2(velocity.x, -velocity.y);
+		float rotation = atan2(velocity.y, velocity.x);
 		super(sprite, rotation, scale, color);
 		this.velocity = velocity;
 	}
@@ -159,3 +159,4 @@ class BulletEntity(Base) : Base
 }
 
 alias LinearBulletEntity = BulletEntity!LinearDrawableHistoryEntity;
+alias QuadraticBulletEntity = BulletEntity!QuadraticDrawableHistoryEntity;
