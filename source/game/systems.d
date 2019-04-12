@@ -32,6 +32,7 @@ struct Controls
 	double warpAcceleration = 0.7; // goes this many percent towards target warp speed every second
 	double unwarpAcceleration = 0.98; // goes this many percent towards normal speed every second
 	double warpSpeed = -2;
+	double warpEmptySpeed = 0.5; // make everything at least run at half time at the cost of not being able to rewind
 
 	// Debug
 	SDL_Keycode speedUpKey = SDLK_k;
@@ -70,6 +71,11 @@ struct Controls
 			{
 				// https://stackoverflow.com/questions/2666339/modifying-multiplying-calculation-to-use-delta-time
 				world.speed = (world.speed - warpSpeed) * pow(1 - warpAcceleration, delta) + warpSpeed;
+			}
+			else
+			{
+				world.speed = (world.speed - warpEmptySpeed) * pow(1 - unwarpAcceleration,
+						delta) + warpEmptySpeed;
 			}
 			warpSecondsLeft = max(warpSecondsLeft - delta, 0);
 		}
