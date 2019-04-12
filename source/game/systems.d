@@ -24,7 +24,7 @@ struct Controls
 	double speed = 200;
 
 	SDL_Keycode warpKey = SDLK_LSHIFT;
-	double warpLength = 5; // seconds
+	double warpLength = 2; // seconds
 	double warpSpeed = -8;
 
 	// Debug
@@ -39,7 +39,7 @@ struct Controls
 		if (event.type == Event.Type.KeyPressed && event.key == shootKey)
 			shoot(world);
 		if (event.type == Event.Type.KeyPressed && event.key == warpKey)
-			warpTimeLeft = 5.0f;
+			warpTimeLeft = warpLength;
 		if (event.type == Event.Type.KeyPressed && event.key == speedUpKey)
 		{
 			world.speed += 0.25f;
@@ -57,7 +57,7 @@ struct Controls
 		if (delta > 0)
 			cooldown -= delta;
 
-		if (warpTimeLeft > 2.5f)
+		if (warpTimeLeft > warpLength / 2)
 		{
 			warpTimeLeft -= delta * (world.normalSpeed / world.speed);
 			immutable double t = (warpLength - warpTimeLeft) / warpLength;
