@@ -25,8 +25,13 @@ struct Controls
 	double speed = 200;
 
 	SDL_Keycode warpKey = SDLK_LSHIFT;
-	double warpLength = 2; // seconds
-	double warpSpeed = -8;
+	double maxWarpSeconds = 8;
+	double warpSecondsLeft = 8;
+	double warpRegenSpeed = 0.4; // should be less than -1/warpSpeed so we can't go back further with each regen
+	bool warping;
+	double warpAcceleration = 0.7; // goes this many percent towards target warp speed every second
+	double unwarpAcceleration = 0.98; // goes this many percent towards normal speed every second
+	double warpSpeed = -2;
 
 	// Debug
 	SDL_Keycode speedUpKey = SDLK_k;
@@ -39,17 +44,15 @@ struct Controls
 	{
 		if (event.type == Event.Type.KeyPressed && event.key == shootKey)
 			shoot(world);
-		if (event.type == Event.Type.KeyPressed && event.key == warpKey)
-			warpTimeLeft = warpLength;
 		if (event.type == Event.Type.KeyPressed && event.key == speedUpKey)
 		{
-			world.speed += 0.25f;
-			writeln("World speed up (", world.speed, ")");
+			world.normalSpeed += 0.25f;
+			writeln("World speed up (", world.normalSpeed, ")");
 		}
 		if (event.type == Event.Type.KeyPressed && event.key == speedDownKey)
 		{
-			world.speed -= 0.25f;
-			writeln("World speed down (", world.speed, ")");
+			world.normalSpeed -= 0.25f;
+			writeln("World speed down (", world.normalSpeed, ")");
 		}
 	}
 
@@ -59,22 +62,24 @@ struct Controls
 		if (world.speed > 0)
 			cooldown -= deltaWorld;
 
-		if (warpTimeLeft > warpLength / 2)
+		warping = Keyboard.instance.isPressed(warpKey);
+
+		if (warping)
 		{
-			warpTimeLeft -= delta;
-			immutable double t = (warpLength - warpTimeLeft) / warpLength;
-			world.speed = world.normalSpeed * (1 - t) + warpSpeed * t;
-		}
-		else if (warpTimeLeft > 0)
-		{
-			warpTimeLeft -= delta;
-			immutable double t = 1 - (warpLength - warpTimeLeft) / warpLength;
-			world.speed = world.normalSpeed * (1 - t) + warpSpeed * t;
-			if (world.speed >= world.normalSpeed)
+			if (warpSecondsLeft > 0)
 			{
-				warpTimeLeft = 0;
-				world.speed = world.normalSpeed;
+				// https://stackoverflow.com/questions/2666339/modifying-multiplying-calculation-to-use-delta-time
+				world.speed = (world.speed - warpSpeed) * pow(1 - warpAcceleration, delta) + warpSpeed;
 			}
+			warpSecondsLeft = max(warpSecondsLeft - delta, 0);
+		}
+		else
+		{
+			if (warpSecondsLeft < maxWarpSeconds)
+				warpSecondsLeft = min(warpSecondsLeft + delta * warpRegenSpeed, maxWarpSeconds);
+			// ease back to normal speed
+			world.speed = (world.speed - world.normalSpeed) * pow(1 - unwarpAcceleration,
+					delta) + world.normalSpeed;
 		}
 
 		if (Keyboard.instance.isPressed(shootKey))
@@ -93,8 +98,8 @@ struct Controls
 		if (movement !is vec2(0, 0))
 		{
 			world.editEntity!((ref entity) {
-				entity.force!PositionComponent.position.moveClamp(movement.normalized * speed * delta * movementSpeed,
-					vec2(400, 304));
+				entity.force!PositionComponent.position.moveClamp(
+					movement.normalized * speed * delta * movementSpeed, vec2(400, 304));
 			})(player);
 		}
 	}
