@@ -212,7 +212,6 @@ struct DrawSystem
 	}
 	
 	void drawBG(Crunch.Image sprite, vec2 position, int gridSize) {
-		spriteBatch.drawSprite(sprite, position * gridSize,
-			vec2(1), 0, DrawOrigin.topLeft, vec2(0), vec4(1));
+		spriteBatch.drawSprite(sprite, position * gridSize);
 	}
 }
