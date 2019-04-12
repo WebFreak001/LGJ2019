@@ -9,9 +9,9 @@ struct Section
 {
 	struct Event
 	{
-		bool finished;
 		double time;
 		void delegate(ref GameWorld world, ref Event self) call;
+		bool finished;
 	}
 
 	Event[] events;
@@ -23,7 +23,7 @@ struct Section
 	{
 		if (world.speed > 0)
 		{
-			while (index < events.length && events[index].time >= world.now)
+			while (index < events.length && events[index].time <= world.now)
 			{
 				events[index].call(world, events[index]);
 				index++;
@@ -31,7 +31,7 @@ struct Section
 		}
 		else
 		{
-			while (index >= 0 && events[index].time < world.now)
+			while (index >= 0 && events[index].time > world.now)
 			{
 				events[index].finished = false;
 				index--;
@@ -51,6 +51,8 @@ struct Level
 	{
 		if (index < sections.length)
 		{
+			sections[index].update(world);
+
 			bool allDone = true;
 			foreach_reverse (ref event; sections[index].events)
 			{

@@ -16,6 +16,8 @@ abstract class HistoryEntity : IHistory
 	protected vec2 start;
 	protected double delay, lifeTime;
 
+	void delegate() onDeath = null;
+
 	void create(ref GameWorld world, vec2 start, double delay, double lifeTime)
 	{
 		this.world = &world;
@@ -40,6 +42,12 @@ abstract class HistoryEntity : IHistory
 	final void makeDead(bool dead)
 	{
 		this.edit!((ref entity) { entity.entity.dead = dead; });
+
+		if (dead && onDeath)
+		{
+			onDeath();
+			onDeath = null;
+		}
 	}
 
 	void onUnstart()
@@ -97,9 +105,10 @@ class DirectionalDrawableHistoryEntity(alias interp) : DrawableHistoryEntity
 	vec2 velocity;
 	vec2 end;
 
-	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1))
+	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1), float rotation = float.nan)
 	{
-		float rotation = atan2(velocity.y, velocity.x);
+		if (isNaN(rotation))
+			rotation = atan2(velocity.y, velocity.x);
 		super(sprite, rotation, scale, color);
 		this.velocity = velocity;
 	}
@@ -139,9 +148,9 @@ class BulletEntity(Base) : Base
 	CollisionComponent collision;
 	int collisionIndex;
 
-	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1))
+	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1), float rotation = float.nan)
 	{
-		super(sprite, velocity, scale, color);
+		super(sprite, velocity, scale, color, rotation);
 	}
 
 	typeof(this) addCircle(CollisionComponent.Mask mask, vec2 position, float radius)

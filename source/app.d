@@ -2,9 +2,13 @@ import d2d;
 
 import resources;
 
+import game.entities.bullet;
 import game.components;
+import game.level;
 import game.systems;
 import game.world;
+
+import std.stdio : writeln;
 
 class Game1 : Game
 {
@@ -14,6 +18,8 @@ private:
 
 	Controls controls;
 	DrawSystem drawSystem;
+
+	Level level;
 
 protected:
 	override void onEvent(Event event)
@@ -40,6 +46,23 @@ public:
 
 		controls.player = world.putEntity(PositionComponent(vec2(200, 152)),
 				ComplexDisplayComponent(R.sprites.player));
+
+		Section section;
+		section.events ~= Section.Event(3, &spawnEnemy);
+		section.events ~= Section.Event(5, (ref world, ref self) {
+			writeln("endless wait");
+		});
+		level.sections ~= section;
+	}
+
+	void spawnEnemy(ref GameWorld world, ref Section.Event self)
+	{
+		writeln("spawning enemy");
+
+		auto enemy = new LinearBulletEntity(R.sprites.ufo, vec2(-100, 0), vec2(1), vec4(1), 0).addCircle(
+				CollisionComponent.Mask.enemyGeneric, vec2(0, 0), 16);
+		enemy.create(world, vec2(420, 152), 0, 4.5);
+		enemy.onDeath = () { self.finished = true; };
 	}
 
 	override void update(float delta)
@@ -48,6 +71,7 @@ public:
 			return;
 
 		world.update(delta);
+		level.update(world);
 
 		double deltaWorld = delta * world.speed;
 
