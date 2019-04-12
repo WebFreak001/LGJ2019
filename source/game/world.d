@@ -246,7 +246,7 @@ struct World(Components...)
 			// start just-started events
 			foreach (ref planned; events[eventEndIndex .. $])
 			{
-				if (planned.start > time)
+				if (planned.start > time || planned.finished)
 					break;
 
 				planned.onRestart();
