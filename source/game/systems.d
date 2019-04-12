@@ -118,7 +118,7 @@ struct Controls
 
 		vec2 start = world.entities[world.getEntity(player)].read!PositionComponent.position;
 
-		auto entity = world.putEntity(PositionComponent(vec2(100, 100)),
+		auto entity = world.putEntity(Dead.yes, PositionComponent(start),
 				DisplayComponent(R.sprites.white4x, vec4(1, 1, 1, 0.5f)));
 
 		world.put(History(world.now, world.now + 2, () {

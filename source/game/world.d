@@ -59,6 +59,8 @@ struct History
 	}
 }
 
+alias Dead = Flag!"dead";
+
 struct Entity
 {
 	__gshared static uint counter;
@@ -190,9 +192,16 @@ struct World(Components...)
 
 		foreach (com; components)
 		{
-			enum Index = staticIndexOf!(typeof(com), Components);
-			static assert(Index != -1, "Component " ~ typeof(com).stringof ~ " is not registered!");
-			entity.write(com);
+			static if (is(typeof(com) == Dead))
+			{
+				entity.entity.dead = !!com;
+			}
+			else
+			{
+				enum Index = staticIndexOf!(typeof(com), Components);
+				static assert(Index != -1, "Component " ~ typeof(com).stringof ~ " is not registered!");
+				entity.write(com);
+			}
 		}
 
 		assert(!entities.length || entities[$ - 1].entity.id < entity.entity.id,
