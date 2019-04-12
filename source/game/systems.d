@@ -153,7 +153,7 @@ struct DrawSystem
 		spriteBatch = new SpriteBatch();
 	}
 
-	void draw(ref GameWorld world, IRenderTarget window)
+	void draw(ref GameWorld world, IRenderTarget window, ref Controls controls)
 	{
 		spriteBatch.begin(R.spritesheet.textures[0]);
 
@@ -177,7 +177,15 @@ struct DrawSystem
 			}
 		}
 
+		drawUI(window, controls);
+
 		spriteBatch.end();
 		spriteBatch.draw(window);
+	}
+
+	void drawUI(IRenderTarget window, ref Controls controls)
+	{
+		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0),
+				vec2(100 * controls.warpSecondsLeft / controls.maxWarpSeconds, 2));
 	}
 }

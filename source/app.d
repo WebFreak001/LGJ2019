@@ -60,7 +60,7 @@ public:
 		matrixStack.top = mat4.scaling(2, 2, 2);
 		// screen size is 400x304 now
 
-		drawSystem.draw(world, window);
+		drawSystem.draw(world, window, controls);
 	}
 }
 
