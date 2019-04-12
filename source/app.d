@@ -47,10 +47,11 @@ public:
 		if (paused)
 			return;
 
-		auto dt = delta * world.speed;
 		world.update(delta);
 
-		controls.update(world, dt);
+		double deltaWorld = delta * world.speed;
+
+		controls.update(world, delta, deltaWorld);
 	}
 
 	override void draw()

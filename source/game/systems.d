@@ -31,7 +31,7 @@ struct Controls
 	SDL_Keycode speedUpKey = SDLK_k;
 	SDL_Keycode speedDownKey = SDLK_j;
 
-	double cooldown;
+	double cooldown = 0;
 	double warpTimeLeft = 0;
 
 	void handleEvent(ref GameWorld world, Event event)
@@ -52,20 +52,21 @@ struct Controls
 		}
 	}
 
-	void update(ref GameWorld world, double delta)
+	void update(ref GameWorld world, double delta, double deltaWorld)
 	{
-		if (delta > 0)
-			cooldown -= delta;
+		double movementSpeed = max(0.5, min(2, world.speed));
+		if (world.speed > 0)
+			cooldown -= deltaWorld;
 
 		if (warpTimeLeft > warpLength / 2)
 		{
-			warpTimeLeft -= delta * (world.normalSpeed / world.speed);
+			warpTimeLeft -= delta;
 			immutable double t = (warpLength - warpTimeLeft) / warpLength;
 			world.speed = world.normalSpeed * (1 - t) + warpSpeed * t;
 		}
 		else if (warpTimeLeft > 0)
 		{
-			warpTimeLeft -= delta * (world.normalSpeed / world.speed);
+			warpTimeLeft -= delta;
 			immutable double t = 1 - (warpLength - warpTimeLeft) / warpLength;
 			world.speed = world.normalSpeed * (1 - t) + warpSpeed * t;
 			if (world.speed >= world.normalSpeed)
@@ -74,7 +75,6 @@ struct Controls
 				world.speed = world.normalSpeed;
 			}
 		}
-		writeln(world.speed);
 
 		if (Keyboard.instance.isPressed(shootKey))
 			shoot(world);
@@ -92,7 +92,7 @@ struct Controls
 		if (movement !is vec2(0, 0))
 		{
 			world.editEntity!((ref entity) {
-				entity.force!PositionComponent.position.moveClamp(movement.normalized * speed * delta,
+				entity.force!PositionComponent.position.moveClamp(movement.normalized * speed * delta * movementSpeed,
 					vec2(400, 304));
 			})(player);
 		}
@@ -110,16 +110,12 @@ struct Controls
 				DisplayComponent(R.sprites.white4x, vec4(1, 1, 1, 0.5f)));
 
 		world.put(History(world.now, world.now + 2, () {
-				writeln("unstart");
 				world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
 			}, () {
-				writeln("restart");
 				world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
 			}, () {
-				writeln("finish");
 				world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
 			}, () {
-				writeln("unfinish");
 				world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
 			}, (p, d) {
 				world.editEntity!((ref entity) {
