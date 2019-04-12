@@ -22,7 +22,7 @@ struct Controls
 	SDL_Keycode downKey = SDLK_DOWN;
 
 	SDL_Keycode shootKey = SDLK_x;
-	double shootCooldown = 0.1; // seconds
+	double shootCooldown = 0.2; // seconds
 	double speed = 200;
 
 	SDL_Keycode warpKey = SDLK_LSHIFT;
@@ -117,10 +117,17 @@ struct Controls
 			return;
 		cooldown = shootCooldown;
 
-		vec2 start = world.entities[world.getEntity(player)].read!PositionComponent.position;
+		vec2 start = world.entities[world.getEntity(player)].read!PositionComponent.position + vec2(0,
+				16);
 
-		new QuadraticBulletEntity(CollisionComponent.Mask.playerShot,
-				R.sprites.lazer, vec2(400, 0), vec2(1), vec4(1, 0, 0, 1)).create(world, start, 0, 2);
+		//dfmt off
+		new QuadraticBulletEntity(R.sprites.torpedo, vec2(600, 0), vec2(1), vec4(1, 1, 1, 1))
+				.addCircle(CollisionComponent.Mask.playerShot, vec2(-12, 0), 4)
+				.addCircle(CollisionComponent.Mask.playerShot, vec2(-6, 0), 4)
+				.addCircle(CollisionComponent.Mask.playerShot, vec2(6, 0), 4)
+				.addCircle(CollisionComponent.Mask.playerShot, vec2(12, 0), 4)
+				.create(world, start, 0, 2);
+		//dfmt on
 	}
 }
 

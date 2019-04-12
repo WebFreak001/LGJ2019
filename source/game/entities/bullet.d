@@ -136,25 +136,27 @@ alias QuinticDrawableHistoryEntity = DirectionalDrawableHistoryEntity!((start,
 
 class BulletEntity(Base) : Base
 {
-	CollisionComponent.Mask collisionMask;
+	CollisionComponent collision;
+	int collisionIndex;
 
-	this(CollisionComponent.Mask collisionMask, Crunch.Image sprite, vec2 velocity,
-			vec2 scale = vec2(1), vec4 color = vec4(1))
+	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1))
 	{
 		super(sprite, velocity, scale, color);
+	}
 
-		this.collisionMask = collisionMask;
+	typeof(this) addCircle(CollisionComponent.Mask mask, vec2 position, float radius)
+	{
+		collision.circles[collisionIndex].mask = mask;
+		collision.circles[collisionIndex].center = position;
+		collision.circles[collisionIndex].radius = radius;
+		collisionIndex++;
+
+		return this;
 	}
 
 	protected override void initializeEntity(ref GameWorld world)
 	{
-		this.edit!((ref entity) {
-			CollisionComponent collision;
-			collision.circles[0].mask = collisionMask;
-			collision.circles[0].center = vec2(0, 0);
-			collision.circles[0].radius = 2 * scale.length;
-			entity.write(collision);
-		});
+		this.edit!((ref entity) { entity.write(collision); });
 	}
 }
 
