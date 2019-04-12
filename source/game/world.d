@@ -156,6 +156,7 @@ struct World(Components...)
 	}
 
 	private double time = 0;
+	double normalSpeed = 1;
 	double speed = 1;
 	/// sorted by start time
 	History[] events;

@@ -14,25 +14,32 @@ struct Controls
 {
 	Entity player;
 
-	SDL_Keycode leftKey = SDLK_a;
-	SDL_Keycode upKey = SDLK_w;
-	SDL_Keycode rightKey = SDLK_d;
-	SDL_Keycode downKey = SDLK_s;
+	SDL_Keycode leftKey = SDLK_LEFT;
+	SDL_Keycode upKey = SDLK_UP;
+	SDL_Keycode rightKey = SDLK_RIGHT;
+	SDL_Keycode downKey = SDLK_DOWN;
 
-	SDL_Keycode shootKey = SDLK_SPACE;
+	SDL_Keycode shootKey = SDLK_x;
 	double shootCooldown = 0.1; // seconds
-	double speed = 100;
+	double speed = 200;
+
+	SDL_Keycode warpKey = SDLK_LSHIFT;
+	double warpLength = 5; // seconds
+	double warpSpeed = -8;
 
 	// Debug
 	SDL_Keycode speedUpKey = SDLK_k;
 	SDL_Keycode speedDownKey = SDLK_j;
 
 	double cooldown;
+	double warpTimeLeft = 0;
 
 	void handleEvent(ref GameWorld world, Event event)
 	{
 		if (event.type == Event.Type.KeyPressed && event.key == shootKey)
 			shoot(world);
+		if (event.type == Event.Type.KeyPressed && event.key == warpKey)
+			warpTimeLeft = 5.0f;
 		if (event.type == Event.Type.KeyPressed && event.key == speedUpKey)
 		{
 			world.speed += 0.25f;
@@ -49,6 +56,25 @@ struct Controls
 	{
 		if (delta > 0)
 			cooldown -= delta;
+
+		if (warpTimeLeft > 2.5f)
+		{
+			warpTimeLeft -= delta * (world.normalSpeed / world.speed);
+			immutable double t = (warpLength - warpTimeLeft) / warpLength;
+			world.speed = world.normalSpeed * (1 - t) + warpSpeed * t;
+		}
+		else if (warpTimeLeft > 0)
+		{
+			warpTimeLeft -= delta * (world.normalSpeed / world.speed);
+			immutable double t = 1 - (warpLength - warpTimeLeft) / warpLength;
+			world.speed = world.normalSpeed * (1 - t) + warpSpeed * t;
+			if (world.speed >= world.normalSpeed)
+			{
+				warpTimeLeft = 0;
+				world.speed = world.normalSpeed;
+			}
+		}
+		writeln(world.speed);
 
 		if (Keyboard.instance.isPressed(shootKey))
 			shoot(world);
