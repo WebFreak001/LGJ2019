@@ -150,6 +150,8 @@ struct DrawSystem
 {
 	SpriteBatch spriteBatch;
 
+	Color bg = Color.fromRGB(0x222034);
+
 	void load()
 	{
 		spriteBatch = new SpriteBatch();

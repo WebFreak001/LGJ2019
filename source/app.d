@@ -80,7 +80,7 @@ public:
 
 	override void draw()
 	{
-		window.clear(0, 0, 0);
+		window.clear(drawSystem.bg.fR, drawSystem.bg.fG, drawSystem.bg.fB);
 		matrixStack.top = mat4.scaling(2, 2, 2);
 		// screen size is 400x304 now
 
