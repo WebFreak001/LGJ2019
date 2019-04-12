@@ -1,0 +1,35 @@
+enemy drone = "res/enemy/drone.json", 10s (lifecycle)
+enemy bomber = "res/enemy/bomber.json", 30s (lifecycle)
+enemy boss = "res/enemy/boss.json", 10s (lifecycle)
+
+swarm drones = drone, 5, 0.2 sec (delay)
+
+item wormhole
+
+waipoint begin
+    spawn drones, top, 40
+    spawn drones, bottom, 40
+    
+    wait 2s
+    
+    spawn bomber, 60, 20
+    spawn bomber, 60, 80
+    
+    wait 8s
+
+waypoint bossfight
+    spawn boss, 50, 50
+        spawn drones, top, 40
+        spawn drones, bottom, 40
+        
+        wait 5s
+        
+        spawn wormhole, 20, 20, begin
+        spawn wormhole, 80, 20, end
+        
+        spawn drones, left, 60
+        spawn drones, right, 60
+        
+    wait boss
+
+waypoint end

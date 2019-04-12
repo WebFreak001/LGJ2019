@@ -2,6 +2,8 @@ module game.systems;
 
 import d2d;
 
+import crunch;
+
 import resources;
 
 import game.components;
@@ -157,6 +159,26 @@ struct DrawSystem
 	{
 		spriteBatch.begin(R.spritesheet.textures[0]);
 
+		int gridSize;
+		gridSize = 64;
+		foreach(x; 0 .. 800 / gridSize)
+			foreach(y; 0 .. 604 / gridSize)
+			{
+				vec2 position = vec2(x - (world.now % 2), y); // 2 seems to be enough
+				Crunch.Image sprite;
+				immutable int xMod = x % 2;
+				immutable int yMod = y % 2;
+				if (xMod == 0 && yMod == 0)
+					sprite = R.sprites.city_layer4_0;
+				else if (xMod == 1 && yMod == 0)
+					sprite = R.sprites.city_layer4_1;
+				else if (xMod == 0 && yMod == 1)
+					sprite = R.sprites.city_layer4_2;
+				else if (xMod == 1 && yMod == 1)
+					sprite = R.sprites.city_layer4_3;
+				drawBG(sprite, position, gridSize);
+			}
+
 		foreach (ref entity; world.entities)
 		{
 			if (entity.entity.dead)
@@ -187,5 +209,10 @@ struct DrawSystem
 	{
 		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0),
 				vec2(100 * controls.warpSecondsLeft / controls.maxWarpSeconds, 2));
+	}
+	
+	void drawBG(Crunch.Image sprite, vec2 position, int gridSize) {
+		spriteBatch.drawSprite(sprite, position * gridSize,
+			vec2(1), 0, DrawOrigin.topLeft, vec2(0), vec4(1));
 	}
 }
