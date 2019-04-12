@@ -23,11 +23,32 @@ struct ComplexDisplayComponent
 	vec2 scale = vec2(1);
 	float rotation = 0;
 	DrawOrigin origin = DrawOrigin.middleCenter;
-	vec2 originOffset = vec2(1);
+	vec2 originOffset = vec2(0);
 	vec4 color = vec4(1);
 }
 
-alias GameWorld = World!(PositionComponent, DisplayComponent, ComplexDisplayComponent);
+struct CollisionComponent
+{
+	enum Mask : uint
+	{
+		player = 1U << 0,
+		enemyGeneric = 1U << 1,
+
+		playerShot = ~Mask.player,
+		enemyShot = Mask.player
+	}
+
+	struct Circle
+	{
+		vec2 center = vec2(0);
+		float radius = 0;
+		uint mask;
+	}
+
+	Circle[8] circles;
+}
+
+alias GameWorld = World!(PositionComponent, DisplayComponent, ComplexDisplayComponent, CollisionComponent);
 
 void editEntity(alias callback)(ref GameWorld world, Entity entity)
 {

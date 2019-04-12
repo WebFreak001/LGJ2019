@@ -57,6 +57,31 @@ struct History
 		if (_update)
 			_update(progress, deltaTime);
 	}
+
+	static History make(double start, double end, IHistory callbacks)
+	{
+		//dfmt off
+		History ret = {
+			start: start,
+			end: end,
+			_onUnstart: &callbacks.onUnstart,
+			_onRestart: &callbacks.onRestart,
+			_onFinish: &callbacks.onFinish,
+			_onUnfinish: &callbacks.onUnfinish,
+			_update: &callbacks.update
+		};
+		//dfmt on
+		return ret;
+	}
+}
+
+interface IHistory
+{
+	void onUnstart();
+	void onRestart();
+	void onFinish();
+	void onUnfinish();
+	void update(double progress, double deltaTime);
 }
 
 alias Dead = Flag!"dead";

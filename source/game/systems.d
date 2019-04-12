@@ -6,6 +6,7 @@ import resources;
 
 import game.components;
 import game.world;
+import game.entities.bullet;
 
 import std.algorithm;
 import std.meta;
@@ -118,22 +119,8 @@ struct Controls
 
 		vec2 start = world.entities[world.getEntity(player)].read!PositionComponent.position;
 
-		auto entity = world.putEntity(Dead.yes, PositionComponent(start),
-				DisplayComponent(R.sprites.white4x, vec4(1, 1, 1, 0.5f)));
-
-		world.put(History(world.now, world.now + 2, () {
-				world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
-			}, () {
-				world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
-			}, () {
-				world.editEntity!((ref entity) { entity.entity.dead = true; })(entity);
-			}, () {
-				world.editEntity!((ref entity) { entity.entity.dead = false; })(entity);
-			}, (p, d) {
-				world.editEntity!((ref entity) {
-					entity.write(PositionComponent(start + vec2(p * 400, 0)));
-				})(entity);
-			}));
+		new LinearBulletEntity(CollisionComponent.Mask.playerShot,
+				R.sprites.bullet, vec2(300, 0), vec2(1), vec4(0, 1, 0, 1)).create(world, start, 0, 2);
 	}
 }
 
