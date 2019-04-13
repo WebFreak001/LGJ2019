@@ -166,7 +166,7 @@ struct DrawSystem
 		foreach(x; 0 .. 800 / gridSize)
 			foreach(y; 0 .. 604 / gridSize)
 			{
-				vec2 position = vec2(x - (world.now % 2), y); // 2 seems to be enough
+				vec2 position = vec2(x - ((world.now % 2) + 2), y); // 2 seems to be enough
 				Crunch.Image sprite;
 				immutable int xMod = x % 2;
 				immutable int yMod = y % 2;
