@@ -31,9 +31,9 @@ struct Section
 		}
 		else
 		{
-			while (index >= 0 && events[index].time > world.now)
+			while (index > 0 && events[index - 1].time > world.now)
 			{
-				events[index].finished = false;
+				events[index - 1].finished = false;
 				index--;
 			}
 		}
