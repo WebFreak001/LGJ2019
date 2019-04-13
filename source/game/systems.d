@@ -161,25 +161,51 @@ struct DrawSystem
 	{
 		spriteBatch.begin(R.spritesheet.textures[0]);
 
+
 		int gridSize;
+		Crunch.Image[] tiles;
+		vec2 dimensions;
+		vec2 startPosition;
+		
+		// Stars
 		gridSize = 64;
-		foreach(x; 0 .. 800 / gridSize)
-			foreach(y; 0 .. 604 / gridSize)
-			{
-				vec2 position = vec2(x - ((world.now % 2) + 2), y); // 2 seems to be enough
-				Crunch.Image sprite;
-				immutable int xMod = x % 2;
-				immutable int yMod = y % 2;
-				if (xMod == 0 && yMod == 0)
-					sprite = R.sprites.city_layer4_0;
-				else if (xMod == 1 && yMod == 0)
-					sprite = R.sprites.city_layer4_1;
-				else if (xMod == 0 && yMod == 1)
-					sprite = R.sprites.city_layer4_2;
-				else if (xMod == 1 && yMod == 1)
-					sprite = R.sprites.city_layer4_3;
-				drawBG(sprite, position, gridSize);
-			}
+		tiles = [
+			R.sprites.city_layer4_0,
+			R.sprites.city_layer4_1,
+			R.sprites.city_layer4_2,
+			R.sprites.city_layer4_3
+		];
+		dimensions = vec2(2, 2);
+		startPosition = vec2(0, 0);
+		drawBG(tiles, dimensions, startPosition, gridSize, world);
+
+		// Buildings
+		gridSize = 16;
+		tiles = [
+			R.sprites.city_layer1_0,
+			R.sprites.city_layer1_1,
+			R.sprites.city_layer1_2,
+			R.sprites.city_layer1_3,
+			R.sprites.city_layer1_4,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_7,
+			R.sprites.city_layer1_4,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_7,
+			R.sprites.city_layer1_4,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_7,
+			R.sprites.city_layer1_8,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_6,
+			R.sprites.city_layer1_11
+		];
+		dimensions = vec2(4, 5);
+		startPosition = vec2(0, 224);
+		drawBG(tiles, dimensions, startPosition, gridSize, world);
 
 		foreach (ref entity; world.entities)
 		{
@@ -212,8 +238,19 @@ struct DrawSystem
 		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0),
 				vec2(100 * controls.warpSecondsLeft / controls.maxWarpSeconds, 2));
 	}
-	
-	void drawBG(Crunch.Image sprite, vec2 position, int gridSize) {
-		spriteBatch.drawSprite(sprite, position * gridSize);
+
+	void drawBG(Crunch.Image[] tiles, vec2 dimensions, vec2 startPosition, int gridSize, ref GameWorld world)
+	{
+		startPosition = startPosition / gridSize;
+		vec2 window = vec2(800, 608) / gridSize; // Double the size so no popping
+		foreach(y; startPosition.y .. window.y)
+			foreach(x; startPosition.x .. window.x)
+			{
+				vec2 position = vec2(x - ((world.now % dimensions.x) + dimensions.x), y);
+				immutable int xMod = cast(int)(x - startPosition.x) % cast(int)dimensions.x;
+				immutable int yMod = cast(int)(y - startPosition.y) % cast(int)dimensions.y;
+				ulong index = xMod + cast(int)(yMod * (dimensions.x));
+				spriteBatch.drawSprite(tiles[index], position * gridSize);
+			}
 	}
 }
