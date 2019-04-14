@@ -107,8 +107,8 @@ struct Controls
 		if (movement !is vec2(0, 0))
 		{
 			world.editEntity!((ref entity) {
-				entity.force!PositionComponent.position.moveClamp(
-					movement.normalized * speed * delta * movementSpeed, vec2(400, 304));
+				entity.force!PositionComponent.position.moveClamp(movement.normalized * speed * delta * movementSpeed,
+					vec2(CanvasWidth, CanvasHeight));
 			})(player);
 		}
 	}
@@ -198,11 +198,11 @@ struct DrawSystem
 	void drawBG(ref GameWorld world)
 	{
 		int gridSize;
-		vec2 dimensions;
-		vec2 startPosition;
-		
+		vec2i dimensions;
+
 		// Stars
 		gridSize = 64;
+		//dfmt off
 		Crunch.Image[4] tileset1 = [
 			R.sprites.city_layer4_0,
 			R.sprites.city_layer4_1,
@@ -210,12 +210,14 @@ struct DrawSystem
 			R.sprites.city_layer4_3
 		];
 		size_t[4] bitmap1 = [0, 1, 2, 3];
-		dimensions = vec2(2, 2);
-		startPosition = vec2(0, 0);
-		drawBGLayer(tileset1[], bitmap1[], dimensions, startPosition, gridSize, world);
+		//dfmt on
+		dimensions = vec2i(2, 2);
+		drawBGLayer(tileset1[], bitmap1[], dimensions, gridSize,
+				vec2(-world.now * 4, -world.now * 0.25f));
 
 		// Buildings
 		gridSize = 16;
+		//dfmt off
 		Crunch.Image[3 * 4] tileset2 = [
 			R.sprites.city_layer1_0, R.sprites.city_layer1_1, R.sprites.city_layer1_2,
 			R.sprites.city_layer1_3, R.sprites.city_layer1_4, R.sprites.city_layer1_5,
@@ -223,30 +225,42 @@ struct DrawSystem
 			R.sprites.city_layer1_9, R.sprites.city_layer1_10, R.sprites.city_layer1_11
 		];
 		size_t[18 * 6] bitmap2 = [
-			0,1,2,3,0,0,  0,0,0,0, 0,0,0, 0,0,0,0,0,
-			4,6,6,7,0,0,  0,0,0,0, 0,0,0, 0,0,0,0,0,
-			4,6,6,7,0,0,  0,0,0,0, 0,0,0, 0,0,0,1,3,
-			4,6,6,7,0,0,  0,1,2,3, 0,1,3, 0,1,8,6,7,
+			0,1,2, 3,0,0, 0,0,0,0, 0,0,0, 0,0,0,0,0,
+			4,6,6, 7,0,0, 0,0,0,0, 0,0,0, 0,0,0,0,0,
+			4,6,6, 7,0,0, 0,0,0,0, 0,0,0, 0,0,0,1,3,
+			4,6,6, 7,0,0, 0,1,2,3, 0,1,3, 0,1,8,6,7,
 			4,6,6,11,2,3, 4,5,5,7, 4,6,7, 4,5,6,6,7,
-			4,6,6,9,6,7,  4,6,9,7, 4,9,7, 4,6,6,6,7
+			4,6,6, 9,6,7, 4,6,9,7, 4,9,7, 4,6,6,6,7
 		];
-		dimensions = vec2(18, 6);
-		startPosition = vec2(0, 208);
-		drawBGLayer(tileset2[], bitmap2[], dimensions, startPosition, gridSize, world);
+		//dfmt on
+		dimensions = vec2i(18, 6);
+		drawBGLayer(tileset2[], bitmap2[], dimensions, gridSize, vec2(-world.now * 16, 0), vec2(0, 208 + 6 * 16));
 	}
 
-	void drawBGLayer(scope const Crunch.Image[] tileset, scope const size_t[] bitmap, vec2 dimensions, vec2 startPosition, int gridSize, ref GameWorld world)
+	/// Draws a tiling background with set scroll. Starts drawing at -dimensions and not at 0
+	void drawBGLayer(scope const Crunch.Image[] tileset, scope const size_t[] bitmap,
+			vec2i dimensions, int gridSize, vec2 scroll, vec2 offset = vec2(0))
 	{
-		startPosition = startPosition / gridSize;
-		vec2 window = vec2(1600, 1216) / gridSize; // 4 times the size so no popping
-		foreach(y; startPosition.y .. window.y)
-			foreach(x; startPosition.x .. window.x)
+		immutable drawWidth = CanvasWidth / gridSize;
+		immutable drawHeight = CanvasHeight / gridSize;
+
+		immutable totalWidth = CanvasWidth + gridSize;
+
+		immutable chunkWidth = dimensions.x * gridSize;
+		immutable chunkHeight = dimensions.y * gridSize;
+
+		scroll.x = scroll.x % chunkWidth;
+		scroll.y = scroll.y % chunkHeight;
+
+		for (int y = -dimensions.y; y <= drawHeight + dimensions.y; y++)
+			for (int x = -dimensions.x; x <= drawWidth + dimensions.x; x++)
 			{
-				vec2 position = vec2(x - ((world.now % dimensions.x) + dimensions.x), y);
-				immutable int xMod = cast(int)(x - startPosition.x) % cast(int)dimensions.x;
-				immutable int yMod = cast(int)(y - startPosition.y) % cast(int)dimensions.y;
-				ulong index = xMod + cast(int)(yMod * (dimensions.x));
-				spriteBatch.drawSprite(tileset[bitmap[index]], position * gridSize);
+				vec2 position = vec2(x * gridSize, y * gridSize) + scroll + offset;
+
+				immutable xMod = (x + dimensions.x) % dimensions.x;
+				immutable yMod = (y + dimensions.y) % dimensions.y;
+				immutable index = xMod + yMod * dimensions.x;
+				spriteBatch.drawSprite(tileset[bitmap[index]], position);
 			}
 	}
 }

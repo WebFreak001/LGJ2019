@@ -33,8 +33,8 @@ public:
 
 	override void start()
 	{
-		windowWidth = 800;
-		windowHeight = 608;
+		windowWidth = WindowWidth;
+		windowHeight = WindowHeight;
 		windowTitle = "LGJ2019";
 		maxFPS = 120;
 	}
@@ -44,8 +44,8 @@ public:
 		R.load();
 		drawSystem.load();
 
-		controls.player = world.putEntity(PositionComponent(vec2(200, 152)),
-				ComplexDisplayComponent(R.sprites.player));
+		controls.player = world.putEntity(PositionComponent(vec2(CanvasWidth / 2,
+				CanvasHeight / 2)), ComplexDisplayComponent(R.sprites.player));
 
 		Section section;
 		section.events ~= Section.Event(3, &spawnEnemy);
@@ -61,7 +61,7 @@ public:
 
 		auto enemy = new LinearBulletEntity(R.sprites.ufo, vec2(-100, 0), vec2(1), vec4(1), 0).addCircle(
 				CollisionComponent.Mask.enemyGeneric, vec2(0, 0), 16);
-		enemy.create(world, vec2(432, 152), 0, 4.5);
+		enemy.create(world, vec2(CanvasWidth + 16, CanvasHeight / 2), 0, 4.5);
 		enemy.onDeath = () { self.finished = true; };
 	}
 
@@ -81,8 +81,7 @@ public:
 	override void draw()
 	{
 		window.clear(drawSystem.bg.fR, drawSystem.bg.fG, drawSystem.bg.fB);
-		matrixStack.top = mat4.scaling(2, 2, 2);
-		// screen size is 400x304 now
+		matrixStack.top = mat4.scaling(CanvasScale, CanvasScale, 1);
 
 		drawSystem.draw(world, window, controls);
 	}

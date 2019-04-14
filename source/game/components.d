@@ -56,3 +56,9 @@ void editEntity(alias callback)(ref GameWorld world, Entity entity)
 	if (index >= 0)
 		callback(world.entities[index]);
 }
+
+enum WindowWidth = 800;
+enum WindowHeight = 608;
+enum CanvasScale = 2;
+enum CanvasWidth = WindowWidth / CanvasScale;
+enum CanvasHeight = WindowHeight / CanvasScale;
