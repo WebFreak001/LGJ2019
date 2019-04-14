@@ -105,7 +105,8 @@ class DirectionalDrawableHistoryEntity(alias interp) : DrawableHistoryEntity
 	vec2 velocity;
 	vec2 end;
 
-	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1), float rotation = float.nan)
+	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1),
+			vec4 color = vec4(1), float rotation = float.nan)
 	{
 		if (isNaN(rotation))
 			rotation = atan2(velocity.y, velocity.x);
@@ -146,11 +147,31 @@ alias QuinticDrawableHistoryEntity = DirectionalDrawableHistoryEntity!((start,
 class BulletEntity(Base) : Base
 {
 	CollisionComponent collision;
+	HealthComponent health;
 	int collisionIndex;
 
-	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1), vec4 color = vec4(1), float rotation = float.nan)
+	this(Crunch.Image sprite, vec2 velocity, vec2 scale = vec2(1),
+			vec4 color = vec4(1), float rotation = float.nan)
 	{
 		super(sprite, velocity, scale, color, rotation);
+	}
+
+	typeof(this) maxHealth(int maxHp)
+	{
+		health.maxHp = health.hp = maxHp;
+		return this;
+	}
+
+	typeof(this) invulnTime(double invulnTime)
+	{
+		health.invulnerabilityTime = invulnTime;
+		return this;
+	}
+
+	typeof(this) type(CollisionComponent.Mask type)
+	{
+		collision.type = type;
+		return this;
 	}
 
 	typeof(this) addCircle(CollisionComponent.Mask mask, vec2 position, float radius)
@@ -165,7 +186,26 @@ class BulletEntity(Base) : Base
 
 	protected override void initializeEntity(ref GameWorld world)
 	{
-		this.edit!((ref entity) { entity.write(collision); });
+		this.edit!((ref entity) {
+			entity.write(collision);
+			if (health.maxHp > 0)
+			{
+				health.onDamage = &onDamage;
+				entity.write(health);
+			}
+		});
+	}
+
+	protected void onDamage(ref GameWorld world, ref GameWorld.WorldEntity entity, int dmg)
+	{
+		assert(entity.entity.id == this.entity.id);
+
+		if (entity.read!HealthComponent.hp <= 0)
+		{
+			// TODO: record undo trigger which undoes damage/death
+
+			makeDead(true);
+		}
 	}
 }
 

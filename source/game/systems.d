@@ -124,6 +124,7 @@ struct Controls
 
 		//dfmt off
 		new QuadraticBulletEntity(R.sprites.torpedo, vec2(600, 0), vec2(1), vec4(1, 1, 1, 1))
+				.maxHealth(1)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(-12, 0), 4)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(-6, 0), 4)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(6, 0), 4)
@@ -170,9 +171,13 @@ struct DrawSystem
 
 			PositionComponent position = entity.read!PositionComponent; // or default
 			DisplayComponent img = entity.read!DisplayComponent;
+
+			float height = 16;
+
 			if (img !is DisplayComponent.init)
 			{
 				spriteBatch.drawSprite(img.sprite, position.position, img.color);
+				height = img.sprite.height;
 			}
 
 			ComplexDisplayComponent cimg = entity.read!ComplexDisplayComponent;
@@ -180,6 +185,18 @@ struct DrawSystem
 			{
 				spriteBatch.drawSprite(cimg.sprite, position.position, cimg.scale,
 						cimg.rotation, cimg.origin, cimg.originOffset, cimg.color);
+				height = cimg.sprite.height;
+			}
+
+			auto hp = entity.get!HealthComponent;
+			if (hp && hp.maxHp > 1)
+			{
+				float percent = hp.hp / cast(float) hp.maxHp;
+
+				spriteBatch.drawSprite(R.sprites.white, position.position + vec2(-8,
+						height * 0.75f), vec2(16, 2), vec4(1, 0, 0, 1));
+				spriteBatch.drawSprite(R.sprites.white, position.position + vec2(-8,
+						height * 0.75f), vec2(16 * percent, 2), vec4(0, 1, 0, 1));
 			}
 		}
 
@@ -213,7 +230,7 @@ struct DrawSystem
 		//dfmt on
 		dimensions = vec2i(2, 2);
 		drawBGLayer(tileset1[], bitmap1[], dimensions, gridSize,
-				vec2(-world.now * 4, -world.now * 0.25f));
+				vec2(-world.now * 4, -world.now * 0.2f));
 
 		// Buildings
 		gridSize = 16;
@@ -234,7 +251,8 @@ struct DrawSystem
 		];
 		//dfmt on
 		dimensions = vec2i(18, 6);
-		drawBGLayer(tileset2[], bitmap2[], dimensions, gridSize, vec2(-world.now * 16, 0), vec2(0, 208 + 6 * 16));
+		drawBGLayer(tileset2[], bitmap2[], dimensions, gridSize,
+				vec2(-world.now * 32, 0), vec2(0, 208 + 6 * 16));
 	}
 
 	/// Draws a tiling background with set scroll. Starts drawing at -dimensions and not at 0
@@ -262,5 +280,73 @@ struct DrawSystem
 				immutable index = xMod + yMod * dimensions.x;
 				spriteBatch.drawSprite(tileset[bitmap[index]], position);
 			}
+	}
+}
+
+struct CollisionSystem
+{
+	void update(ref GameWorld world, double deltaWorld)
+	{
+		foreach (i, ref entity; world.entities)
+		{
+			if (entity.entity.dead)
+				continue;
+
+			auto hp = entity.get!HealthComponent;
+			if (hp)
+			{
+				if (hp.remainingInvulnerabilityTime <= 0)
+					hp.remainingInvulnerabilityTime = 0;
+				else
+					hp.remainingInvulnerabilityTime -= abs(deltaWorld);
+			}
+
+			auto collider = entity.get!CollisionComponent;
+			if (!collider)
+				continue;
+			PositionComponent position = entity.read!PositionComponent; // or default
+
+			foreach (ref other; world.entities[i + 1 .. $])
+			{
+				if (other.entity.dead)
+					continue;
+
+				auto otherCollider = other.get!CollisionComponent;
+				if (!otherCollider)
+					continue;
+				PositionComponent otherPosition = other.read!PositionComponent; // or default
+
+				if (collider.collides(position.position, *otherCollider, otherPosition.position))
+				{
+					auto center = (position.position + otherPosition.position) * 0.5f;
+					if (collider.onCollide)
+						collider.onCollide(world, entity, other, center, false);
+					else
+						defaultCollisionCallback(world, entity, other, center, false);
+
+					if (otherCollider.onCollide)
+						otherCollider.onCollide(world, other, entity, center, true);
+					else
+						defaultCollisionCallback(world, other, entity, center, true);
+				}
+			}
+		}
+	}
+}
+
+void defaultCollisionCallback(ref GameWorld world, ref GameWorld.WorldEntity self,
+		ref GameWorld.WorldEntity other, vec2 center, bool second)
+{
+	auto selfHp = self.get!HealthComponent;
+	auto otherHp = other.get!HealthComponent;
+
+	if (selfHp && otherHp)
+	{
+		if (selfHp.remainingInvulnerabilityTime <= 0 && otherHp.remainingInvulnerabilityTime <= 0)
+		{
+			auto hp = min(selfHp.hp, otherHp.hp);
+			selfHp.gotHit(world, self, hp);
+			otherHp.gotHit(world, other, hp);
+		}
 	}
 }

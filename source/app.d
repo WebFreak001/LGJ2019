@@ -17,6 +17,7 @@ private:
 	GameWorld world;
 
 	Controls controls;
+	CollisionSystem collisions;
 	DrawSystem drawSystem;
 
 	Level level;
@@ -44,8 +45,13 @@ public:
 		R.load();
 		drawSystem.load();
 
+		CollisionComponent playerCollision;
+		playerCollision.type = CollisionComponent.Mask.player;
+		playerCollision.circles[0].radius = 16;
+		playerCollision.circles[0].mask = CollisionComponent.Mask.playerShot;
 		controls.player = world.putEntity(PositionComponent(vec2(CanvasWidth / 2,
-				CanvasHeight / 2)), ComplexDisplayComponent(R.sprites.player));
+				CanvasHeight / 2)), ComplexDisplayComponent(R.sprites.player),
+				HealthComponent(3, 3), playerCollision);
 
 		Section section;
 		section.events ~= Section.Event(3, &spawnEnemy);
@@ -59,8 +65,9 @@ public:
 	{
 		writeln("spawning enemy");
 
-		auto enemy = new LinearBulletEntity(R.sprites.ufo, vec2(-100, 0), vec2(1), vec4(1), 0).addCircle(
-				CollisionComponent.Mask.enemyGeneric, vec2(0, 0), 16);
+		auto enemy = new LinearBulletEntity(R.sprites.ufo, vec2(-100, 0), vec2(1), vec4(1), 0).maxHealth(2)
+			.type(CollisionComponent.Mask.enemyGeneric).addCircle(
+					CollisionComponent.Mask.enemyShot, vec2(0, 0), 16);
 		enemy.create(world, vec2(CanvasWidth + 16, CanvasHeight / 2), 0, 4.5);
 		enemy.onDeath = () { self.finished = true; };
 	}
@@ -75,6 +82,7 @@ public:
 
 		double deltaWorld = delta * world.speed;
 
+		collisions.update(world, deltaWorld);
 		controls.update(world, delta, deltaWorld);
 	}
 

@@ -46,9 +46,60 @@ struct CollisionComponent
 	}
 
 	Circle[8] circles;
+	Mask type;
+	void delegate(ref GameWorld world, ref GameWorld.WorldEntity self,
+			ref GameWorld.WorldEntity other, vec2 center, bool second) onCollide;
+
+	bool collides(vec2 offset, CollisionComponent other, vec2 otherOffset)
+	{
+		// must be symmetrical collision because we only check if one side collides with the other and not the other way around
+
+		foreach (c; circles)
+		{
+			if (!(c.radius > 0)) // NaN prevention included
+				continue;
+			// only radius > 0 here
+
+			foreach (o; other.circles)
+			{
+				if (!(o.radius > 0)) // NaN prevention included
+					continue;
+				if ((c.mask & other.type) == 0 && (o.mask & type) == 0)
+					continue;
+
+				const r = c.radius + o.radius;
+
+				if (((c.center + offset) - (o.center + otherOffset)).length_squared <= r * r)
+					return true;
+			}
+		}
+		return false;
+	}
 }
 
-alias GameWorld = World!(PositionComponent, DisplayComponent, ComplexDisplayComponent, CollisionComponent);
+struct HealthComponent
+{
+	int maxHp = 1, hp = 0;
+	double invulnerabilityTime = 0.5;
+	double remainingInvulnerabilityTime = 0;
+	void delegate(ref GameWorld world, ref GameWorld.WorldEntity entity, int dmg) onDamage;
+
+	void gotHit(ref GameWorld world, ref GameWorld.WorldEntity entity, int dmg)
+	{
+		if (dmg > hp)
+			hp = 0;
+		else
+			hp -= dmg;
+
+		remainingInvulnerabilityTime = invulnerabilityTime;
+
+		if (onDamage)
+			onDamage(world, entity, dmg);
+	}
+}
+
+alias GameWorld = World!(PositionComponent, DisplayComponent,
+		ComplexDisplayComponent, CollisionComponent, HealthComponent);
 
 void editEntity(alias callback)(ref GameWorld world, Entity entity)
 {
