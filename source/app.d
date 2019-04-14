@@ -61,7 +61,7 @@ public:
 
 		auto enemy = new LinearBulletEntity(R.sprites.ufo, vec2(-100, 0), vec2(1), vec4(1), 0).addCircle(
 				CollisionComponent.Mask.enemyGeneric, vec2(0, 0), 16);
-		enemy.create(world, vec2(420, 152), 0, 4.5);
+		enemy.create(world, vec2(432, 152), 0, 4.5);
 		enemy.onDeath = () { self.finished = true; };
 	}
 

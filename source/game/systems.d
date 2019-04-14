@@ -198,33 +198,31 @@ struct DrawSystem
 	void drawBG(ref GameWorld world)
 	{
 		int gridSize;
-		Crunch.Image[] tileset;
-		ulong[] bitmap;
 		vec2 dimensions;
 		vec2 startPosition;
 		
 		// Stars
 		gridSize = 64;
-		tileset = [
+		Crunch.Image[4] tileset1 = [
 			R.sprites.city_layer4_0,
 			R.sprites.city_layer4_1,
 			R.sprites.city_layer4_2,
 			R.sprites.city_layer4_3
 		];
-		bitmap = [0, 1, 2, 3];
+		size_t[4] bitmap1 = [0, 1, 2, 3];
 		dimensions = vec2(2, 2);
 		startPosition = vec2(0, 0);
-		drawBGLayer(tileset, bitmap, dimensions, startPosition, gridSize, world);
+		drawBGLayer(tileset1[], bitmap1[], dimensions, startPosition, gridSize, world);
 
 		// Buildings
 		gridSize = 16;
-		tileset = [
+		Crunch.Image[3 * 4] tileset2 = [
 			R.sprites.city_layer1_0, R.sprites.city_layer1_1, R.sprites.city_layer1_2,
 			R.sprites.city_layer1_3, R.sprites.city_layer1_4, R.sprites.city_layer1_5,
 			R.sprites.city_layer1_6, R.sprites.city_layer1_7, R.sprites.city_layer1_8,
 			R.sprites.city_layer1_9, R.sprites.city_layer1_10, R.sprites.city_layer1_11
 		];
-		bitmap = [
+		size_t[18 * 6] bitmap2 = [
 			0,1,2,3,0,0,  0,0,0,0, 0,0,0, 0,0,0,0,0,
 			4,6,6,7,0,0,  0,0,0,0, 0,0,0, 0,0,0,0,0,
 			4,6,6,7,0,0,  0,0,0,0, 0,0,0, 0,0,0,1,3,
@@ -234,10 +232,10 @@ struct DrawSystem
 		];
 		dimensions = vec2(18, 6);
 		startPosition = vec2(0, 208);
-		drawBGLayer(tileset, bitmap, dimensions, startPosition, gridSize, world);
+		drawBGLayer(tileset2[], bitmap2[], dimensions, startPosition, gridSize, world);
 	}
 
-	void drawBGLayer(Crunch.Image[] tileset, ulong[] bitmap, vec2 dimensions, vec2 startPosition, int gridSize, ref GameWorld world)
+	void drawBGLayer(scope const Crunch.Image[] tileset, scope const size_t[] bitmap, vec2 dimensions, vec2 startPosition, int gridSize, ref GameWorld world)
 	{
 		startPosition = startPosition / gridSize;
 		vec2 window = vec2(1600, 1216) / gridSize; // 4 times the size so no popping
