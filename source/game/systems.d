@@ -218,8 +218,8 @@ struct DrawSystem
 			enum timewidth = 35.0f; // 40 is full width
 
 			spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 8), vec2(100, 2), vec4(0, 0, 0, 1));
-			spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * (world.now % 10), 8),
-					vec2(0.25f, 2), vec4(0, 0, 1, 1));
+			spriteBatch.drawSprite(R.sprites.white4x,
+					vec2(timewidth * (world.now % 10), 8), vec2(0.25f, 2), vec4(0, 0, 1, 1));
 			double start = floor(world.now / 10) * 10;
 			double end = start + 10;
 			foreach (i, event; world.events)
@@ -236,14 +236,14 @@ struct DrawSystem
 						vec2(timewidth * 0.25f * (event.end - event.start), 0.5f), vec4(color, 0.4f));
 				if (!isNaN(event.ended))
 				{
-					spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * (event.ended - start), 8),
-							vec2(0.5f, 1), vec4(1, 1, 0, 0.6f));
+					spriteBatch.drawSprite(R.sprites.white4x,
+							vec2(timewidth * (event.ended - start), 8), vec2(0.5f, 1), vec4(1, 1, 0, 0.6f));
 				}
 
 				if (i == world.eventStartIndex)
 				{
-					spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x - 2,
-							14), vec2(0.5f, 0.5f), vec4(0, 1, 0, 1));
+					spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x - 2, 14),
+							vec2(0.5f, 0.5f), vec4(0, 1, 0, 1));
 				}
 
 				if (i + 1 == world.eventEndIndex)
@@ -296,7 +296,6 @@ struct DrawSystem
 				vec2(-world.now * 12, 0), vec2(0, 208 + 6 * 16));
 
 		// Ground
-
 
 		// Foreground buildings
 		gridSize = 16;
@@ -376,6 +375,15 @@ struct CollisionSystem
 				continue;
 			PositionComponent position = entity.read!PositionComponent; // or default
 
+			mat2 transform = mat2.identity;
+			if (auto draw = entity.get!ComplexDisplayComponent)
+			{
+				float s = -sin(draw.rotation);
+				float c = cos(draw.rotation);
+
+				transform = mat2(c, -s, s, c);
+			}
+
 			foreach (ref other; world.entities[i + 1 .. $])
 			{
 				if (other.entity.dead)
@@ -386,7 +394,17 @@ struct CollisionSystem
 					continue;
 				PositionComponent otherPosition = other.read!PositionComponent; // or default
 
-				if (collider.collides(position.position, *otherCollider, otherPosition.position))
+				mat2 otherTransform = mat2.identity;
+				if (auto draw = other.get!ComplexDisplayComponent)
+				{
+					float s = -sin(draw.rotation);
+					float c = cos(draw.rotation);
+
+					otherTransform = mat2(c, -s, s, c);
+				}
+
+				if (collider.collides(position.position, transform, *otherCollider,
+						otherPosition.position, otherTransform))
 				{
 					auto center = (position.position + otherPosition.position) * 0.5f;
 					if (collider.onCollide)

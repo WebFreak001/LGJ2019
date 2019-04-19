@@ -48,10 +48,11 @@ struct CollisionComponent
 
 	Circle[8] circles;
 	Mask type;
-	void delegate(ref GameWorld.WorldEntity self,
-			ref GameWorld.WorldEntity other, vec2 center, bool second) onCollide;
+	void delegate(ref GameWorld.WorldEntity self, ref GameWorld.WorldEntity other,
+			vec2 center, bool second) onCollide;
 
-	bool collides(vec2 offset, CollisionComponent other, vec2 otherOffset)
+	bool collides(vec2 offset, mat2 transform, CollisionComponent other,
+			vec2 otherOffset, mat2 otherTransform)
 	{
 		// must be symmetrical collision because we only check if one side collides with the other and not the other way around
 
@@ -60,6 +61,8 @@ struct CollisionComponent
 			if (!(c.radius > 0)) // NaN prevention included
 				continue;
 			// only radius > 0 here
+
+			const center1 = c.center * transform + offset;
 
 			foreach (o; other.circles)
 			{
@@ -70,7 +73,7 @@ struct CollisionComponent
 
 				const r = c.radius + o.radius;
 
-				if (((c.center + offset) - (o.center + otherOffset)).length_squared <= r * r)
+				if ((center1 - (o.center * otherTransform + otherOffset)).length_squared <= r * r)
 					return true;
 			}
 		}
