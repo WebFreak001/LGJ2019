@@ -1,5 +1,7 @@
 module game.systems;
 
+debug = History;
+
 import d2d;
 
 import crunch;
@@ -200,16 +202,50 @@ struct DrawSystem
 			}
 		}
 
-		drawUI(window, controls);
+		drawUI(world, window, controls);
 
 		spriteBatch.end();
 		spriteBatch.draw(window);
 	}
 
-	void drawUI(IRenderTarget window, ref Controls controls)
+	void drawUI(ref GameWorld world, IRenderTarget window, ref Controls controls)
 	{
 		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0),
 				vec2(100 * controls.warpSecondsLeft / controls.maxWarpSeconds, 2));
+
+		debug (History)
+		{
+			spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 8), vec2(100, 2), vec4(0, 0, 0, 1));
+			spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * (world.now % 10), 8),
+					vec2(0.25f, 2), vec4(0, 0, 1, 1));
+			double start = floor(world.now / 10) * 10;
+			double end = start + 10;
+			foreach (i, event; world.events)
+			{
+				if (event.start < start || event.start > end)
+					continue;
+
+				double x = event.start - start;
+
+				vec3 color = event.finished ? vec3(0, 1, 0) : vec3(1, 0, 0);
+				spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x, 8),
+						vec2(0.25f, 2), vec4(color, 0.7f));
+				spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x, 8),
+						vec2(10 * (event.end - event.start), 0.5f), vec4(color, 0.1f));
+
+				if (i == world.eventStartIndex)
+				{
+					spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x - 2,
+							14), vec2(0.5f, 0.5f), vec4(0, 1, 0, 1));
+				}
+
+				if (i + 1 == world.eventEndIndex)
+				{
+					spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x, 14),
+							vec2(0.5f, 0.5f), vec4(0, 0, 1, 1));
+				}
+			}
+		}
 	}
 
 	void drawBG(ref GameWorld world)
