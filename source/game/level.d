@@ -4,6 +4,8 @@ import game.components;
 import game.systems;
 import game.world;
 
+import std.math;
+
 /// A Section is a list of reversible events that can occur multiple times.
 struct Section
 {
@@ -16,14 +18,23 @@ struct Section
 
 	Event[] events;
 	int index;
+	double startTime;
 
 	static assert(typeof(index).min < 0, "index must not be able to underflow at 0");
 
+	double now() @property const
+	{
+		return world.now - startTime;
+	}
+
 	void update()
 	{
+		if (isNaN(startTime))
+			startTime = world.now;
+
 		if (world.speed > 0)
 		{
-			while (index < events.length && events[index].time <= world.now)
+			while (index < events.length && events[index].time <= now)
 			{
 				events[index].call(events[index]);
 				index++;
@@ -31,7 +42,7 @@ struct Section
 		}
 		else
 		{
-			while (index > 0 && events[index - 1].time > world.now)
+			while (index > 0 && events[index - 1].time > now)
 			{
 				events[index - 1].finished = false;
 				index--;
@@ -49,6 +60,9 @@ struct Level
 
 	void update()
 	{
+		if (world.cleaning)
+			return;
+
 		if (index < sections.length)
 		{
 			sections[index].update();
@@ -63,7 +77,10 @@ struct Level
 				}
 			}
 			if (allDone)
+			{
 				index++;
+				world.cleanHistory();
+			}
 		}
 	}
 }

@@ -117,7 +117,7 @@ struct Controls
 
 	void shoot()
 	{
-		if (cooldown > 0)
+		if (cooldown > 0 || world.cleaning)
 			return;
 		cooldown = shootCooldown;
 

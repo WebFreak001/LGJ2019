@@ -60,13 +60,26 @@ public:
 				CanvasHeight / 2)), ComplexDisplayComponent(R.sprites.player),
 				HealthComponent(3, 3), playerCollision);
 
-		Section section;
-		section.events ~= Section.Event(3, &spawnEnemy);
-		section.events ~= Section.Event(5, (ref self) { writeln("endless wait"); });
-		level.sections ~= section;
+		Section section1;
+		section1.events ~= Section.Event(3, enemyEvent(vec2(CanvasWidth + 16, 32)));
+		section1.events ~= Section.Event(3, enemyEvent(vec2(CanvasWidth + 16, CanvasHeight / 2)));
+		section1.events ~= Section.Event(3, enemyEvent(vec2(CanvasWidth + 16, CanvasHeight - 32)));
+		level.sections ~= section1;
+
+		Section section2;
+		section2.events ~= Section.Event(1, enemyEvent(vec2(CanvasWidth + 16, 32)));
+		section2.events ~= Section.Event(1, enemyEvent(vec2(CanvasWidth + 16, CanvasHeight / 2)));
+
+		section2.events ~= Section.Event(5, (ref self) { writeln("endless wait"); });
+		level.sections ~= section2;
 	}
 
-	void spawnEnemy(ref Section.Event self)
+	void delegate(ref Section.Event) enemyEvent(vec2 start)
+	{
+		return (ref ev) { spawnEnemy(ev, start); };
+	}
+
+	void spawnEnemy(ref Section.Event self, vec2 spawnPosition)
 	{
 		writeln("spawning enemy");
 
@@ -74,7 +87,7 @@ public:
 			.type(CollisionComponent.Mask.enemyGeneric).addCircle(
 					CollisionComponent.Mask.enemyShot, vec2(0, 0), 16);
 		auto start = world.now;
-		enemy.create(vec2(CanvasWidth + 16, CanvasHeight / 2), 0, 4.5);
+		enemy.create(spawnPosition, 0, 4.5);
 		enemy.onDeath = () {
 			self.finished = true;
 			world.endNow(start, enemy.historyID);
@@ -84,9 +97,7 @@ public:
 
 	void makeChildEffects(ref Section.Event event, LinearBulletEntity entity, double time)
 	{
-		world.put(History.makeTrigger(time, {
-				makeChildEffects(event, entity, time);
-			}, {
+		world.put(History.makeTrigger(time, { makeChildEffects(event, entity, time); }, {
 				if (event.finished)
 					return;
 				shootChild(entity);
@@ -94,14 +105,14 @@ public:
 			}, entity.historyID, -1));
 	}
 
-	void shootChild(LinearBulletEntity entity)
+	void shootChild(LinearBulletEntity parent)
 	{
-		entity.edit!((ref entity) {
-			vec2 start = entity.read!PositionComponent.position + vec2(0, 16);
+		parent.edit!((ref parent) {
+			vec2 start = parent.read!PositionComponent.position + vec2(0, 16);
 
 			vec2 direction = vec2(-1, 0);
-			editEntity!((ref entity) {
-				direction = (entity.read!PositionComponent.position - start).normalized;
+			editEntity!((ref player) {
+				direction = (player.read!PositionComponent.position - start).normalized;
 			})(controls.player);
 
 			//dfmt off

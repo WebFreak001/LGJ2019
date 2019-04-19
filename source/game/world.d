@@ -231,6 +231,7 @@ struct World(Components...)
 	History[] events;
 	ptrdiff_t eventStartIndex;
 	ptrdiff_t eventEndIndex;
+	bool cleaning;
 
 	WorldEntity[] entities;
 
@@ -384,6 +385,13 @@ struct World(Components...)
 		return false;
 	}
 
+	void cleanHistory()
+	{
+		if (eventEndIndex > events.length)
+			events.length = eventEndIndex;
+		cleaning = true;
+	}
+
 	void update(double t)
 	{
 		double start = time;
@@ -498,5 +506,14 @@ struct World(Components...)
 			}
 		}
 		// else nan or equal
+
+		if (cleaning && eventStartIndex == eventEndIndex)
+		{
+			events.length = 0;
+			eventStartIndex = 0;
+			eventEndIndex = 0;
+			History.counter = 0;
+			cleaning = false;
+		}
 	}
 }
