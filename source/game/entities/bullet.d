@@ -12,30 +12,32 @@ import game.world;
 abstract class HistoryEntity : IHistory
 {
 	protected Entity entity;
-	protected GameWorld* world;
 	protected vec2 start;
 	protected double delay, lifeTime;
 
 	void delegate() onDeath = null;
 
-	void create(ref GameWorld world, vec2 start, double delay, double lifeTime)
+	uint historyID;
+
+	void create(vec2 start, double delay, double lifeTime)
 	{
-		this.world = &world;
 		this.start = start;
 		this.delay = delay;
 		this.lifeTime = lifeTime;
 
-		makeEntity(world, start, delay, lifeTime);
-		initializeEntity(world);
-		world.put(History.make(world.now + delay, world.now + delay + lifeTime, this));
+		makeEntity(start, delay, lifeTime);
+		initializeEntity();
+		auto event = History.make(world.now + delay, world.now + delay + lifeTime, this);
+		historyID = event.id;
+		world.put(event);
 	}
 
-	protected void makeEntity(ref GameWorld world, vec2 start, double delay, double lifeTime)
+	protected void makeEntity(vec2 start, double delay, double lifeTime)
 	{
 		entity = world.putEntity(Dead.yes, PositionComponent(start));
 	}
 
-	protected void initializeEntity(ref GameWorld world)
+	protected void initializeEntity()
 	{
 	}
 
@@ -88,7 +90,7 @@ abstract class DrawableHistoryEntity : HistoryEntity
 		this.color = color;
 	}
 
-	protected override void makeEntity(ref GameWorld world, vec2 start, double delay, double lifeTime)
+	protected override void makeEntity(vec2 start, double delay, double lifeTime)
 	{
 		entity = world.putEntity(Dead.yes, PositionComponent(start),
 				ComplexDisplayComponent(sprite, scale, rotation, DrawOrigin.middleCenter, vec2(0), color));
@@ -97,7 +99,7 @@ abstract class DrawableHistoryEntity : HistoryEntity
 
 private void edit(alias cb)(HistoryEntity he)
 {
-	(*he.world).editEntity!cb(he.entity);
+	editEntity!cb(he.entity);
 }
 
 class DirectionalDrawableHistoryEntity(alias interp) : DrawableHistoryEntity
@@ -114,9 +116,9 @@ class DirectionalDrawableHistoryEntity(alias interp) : DrawableHistoryEntity
 		this.velocity = velocity;
 	}
 
-	override void create(ref GameWorld world, vec2 start, double delay, double lifeTime)
+	override void create(vec2 start, double delay, double lifeTime)
 	{
-		super.create(world, start, delay, lifeTime);
+		super.create(start, delay, lifeTime);
 
 		end = start + velocity * lifeTime;
 	}
@@ -184,7 +186,7 @@ class BulletEntity(Base) : Base
 		return this;
 	}
 
-	protected override void initializeEntity(ref GameWorld world)
+	protected override void initializeEntity()
 	{
 		this.edit!((ref entity) {
 			entity.write(collision);
@@ -196,16 +198,35 @@ class BulletEntity(Base) : Base
 		});
 	}
 
-	protected void onDamage(ref GameWorld world, ref GameWorld.WorldEntity entity, int dmg)
+	protected void onDamage(ref GameWorld.WorldEntity entity, int dmg)
 	{
 		assert(entity.entity.id == this.entity.id);
 
-		if (entity.read!HealthComponent.hp <= 0)
-		{
-			// TODO: record undo trigger which undoes damage/death
+		if (dmg == 0)
+			return;
 
-			makeDead(true);
-		}
+		// TODO: record undo trigger which undoes damage/death
+		world.put(History.makeTrigger(world.now, {
+				edit!((ref entity) {
+					auto health = entity.get!HealthComponent;
+					if (health)
+					{
+						health.gotHit(entity, dmg, false);
+						if (health.hp <= 0)
+							makeDead(true);
+					}
+				})(this);
+			}, {
+				edit!((ref entity) {
+					auto health = entity.get!HealthComponent;
+					if (health)
+					{
+						health.gotHit(entity, -dmg, false);
+						if (health.hp > 0)
+							makeDead(false);
+					}
+				})(this);
+			}));
 	}
 }
 

@@ -10,7 +10,7 @@ struct Section
 	struct Event
 	{
 		double time;
-		void delegate(ref GameWorld world, ref Event self) call;
+		void delegate(ref Event self) call;
 		bool finished;
 	}
 
@@ -19,13 +19,13 @@ struct Section
 
 	static assert(typeof(index).min < 0, "index must not be able to underflow at 0");
 
-	void update(ref GameWorld world)
+	void update()
 	{
 		if (world.speed > 0)
 		{
 			while (index < events.length && events[index].time <= world.now)
 			{
-				events[index].call(world, events[index]);
+				events[index].call(events[index]);
 				index++;
 			}
 		}
@@ -47,11 +47,11 @@ struct Level
 	Section[] sections;
 	int index;
 
-	void update(ref GameWorld world)
+	void update()
 	{
 		if (index < sections.length)
 		{
-			sections[index].update(world);
+			sections[index].update();
 
 			bool allDone = true;
 			foreach_reverse (ref event; sections[index].events)

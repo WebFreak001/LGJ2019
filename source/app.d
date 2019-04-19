@@ -14,7 +14,6 @@ class Game1 : Game
 {
 private:
 	bool paused;
-	GameWorld world;
 
 	Controls controls;
 	CollisionSystem collisions;
@@ -27,7 +26,7 @@ protected:
 	{
 		super.onEvent(event);
 
-		controls.handleEvent(world, event);
+		controls.handleEvent(event);
 	}
 
 public:
@@ -55,21 +54,22 @@ public:
 
 		Section section;
 		section.events ~= Section.Event(3, &spawnEnemy);
-		section.events ~= Section.Event(5, (ref world, ref self) {
+		section.events ~= Section.Event(5, (ref self) {
 			writeln("endless wait");
 		});
 		level.sections ~= section;
 	}
 
-	void spawnEnemy(ref GameWorld world, ref Section.Event self)
+	void spawnEnemy(ref Section.Event self)
 	{
 		writeln("spawning enemy");
 
 		auto enemy = new LinearBulletEntity(R.sprites.ufo, vec2(-100, 0), vec2(1), vec4(1), 0).maxHealth(2)
 			.type(CollisionComponent.Mask.enemyGeneric).addCircle(
 					CollisionComponent.Mask.enemyShot, vec2(0, 0), 16);
-		enemy.create(world, vec2(CanvasWidth + 16, CanvasHeight / 2), 0, 4.5);
-		enemy.onDeath = () { self.finished = true; };
+		auto start = world.now;
+		enemy.create(vec2(CanvasWidth + 16, CanvasHeight / 2), 0, 4.5);
+		enemy.onDeath = () { self.finished = true; world.endNow(start, enemy.historyID); };
 	}
 
 	override void update(float delta)
@@ -78,12 +78,12 @@ public:
 			return;
 
 		world.update(delta);
-		level.update(world);
+		level.update();
 
 		double deltaWorld = delta * world.speed;
 
-		collisions.update(world, deltaWorld);
-		controls.update(world, delta, deltaWorld);
+		collisions.update(deltaWorld);
+		controls.update(delta, deltaWorld);
 	}
 
 	override void draw()
@@ -91,7 +91,7 @@ public:
 		window.clear(drawSystem.bg.fR, drawSystem.bg.fG, drawSystem.bg.fB);
 		matrixStack.top = mat4.scaling(CanvasScale, CanvasScale, 1);
 
-		drawSystem.draw(world, window, controls);
+		drawSystem.draw(window, controls);
 	}
 }
 

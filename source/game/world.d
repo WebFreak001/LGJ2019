@@ -10,6 +10,8 @@ import std.meta;
 
 struct History
 {
+	__gshared static uint counter;
+
 	double start, end;
 	void delegate() _onUnstart;
 	void delegate() _onRestart;
@@ -17,6 +19,9 @@ struct History
 	void delegate() _onUnfinish;
 	void delegate(double progress, double deltaTime) _update;
 	bool finished;
+	uint id;
+	double ended;
+	int remainingRestarts = -1;
 
 	// forward life-cycle:
 	// onRestart()
@@ -68,7 +73,23 @@ struct History
 			_onRestart: &callbacks.onRestart,
 			_onFinish: &callbacks.onFinish,
 			_onUnfinish: &callbacks.onUnfinish,
-			_update: &callbacks.update
+			_update: &callbacks.update,
+			id: counter++
+		};
+		//dfmt on
+		return ret;
+	}
+
+	static History makeTrigger(double at, void delegate() undo, void delegate() redo)
+	{
+		//dfmt off
+		History ret = {
+			start: at,
+			end: at,
+			_onUnstart: redo,
+			_onRestart: undo,
+			id: counter++,
+			remainingRestarts: 1
 		};
 		//dfmt on
 		return ret;
@@ -243,12 +264,20 @@ struct World(Components...)
 
 	void put(History event)
 	{
-		if (eventEndIndex < events.length)
-			events.length = eventEndIndex;
+		for (ptrdiff_t i = events.length - 1; i >= eventEndIndex; i--)
+		{
+			if (events[i].finished)
+			{
+				foreach (j, ref other; events[i + 1 .. $])
+					events[i - j + 2] = other;
+				events.length--;
+			}
+		}
 
 		if (!events.length || event.start >= events[$ - 1].start)
 		{
 			events.assumeSafeAppend ~= event;
+			import std.stdio; writeln("Putting history at end ", events.length - 1);
 			return;
 		}
 		else
@@ -290,8 +319,51 @@ struct World(Components...)
 		foreach_reverse (i; index .. events.length)
 			events[i] = events[i - 1];
 		events[index] = event;
+		import std.stdio; writeln("Putting history at ", index, ", length is now ", events.length);
 
-		assert(events.isSorted!"a.start <= b.start");
+		assert(events.isSorted!"a.start < b.start");
+	}
+
+	ref History findHistory(double startHint, uint entryID)
+	{
+		int index = cast(int) events.binarySearch!((a) => a.start - startHint);
+		if (index < 0)
+			index = ~index;
+
+		int mul = -1;
+		int step = 0;
+		foreach (i; 0 .. events.length * 2)
+		{
+			// grow outwards from index right, left, right, left, etc.
+			auto n = index + step * mul;
+			if (mul == 1)
+			{
+				mul = -1;
+			}
+			else
+			{
+				mul = 1;
+				step++;
+			}
+
+			if (n < 0 || n >= events.length)
+				continue;
+			if (events[n].id == entryID)
+				return events[n];
+		}
+		return events[0];
+	}
+
+	void endNow(double startHint, uint entryID)
+	{
+		if (!events.length)
+			return;
+		auto event = &findHistory(startHint, entryID);
+		if (event.id != entryID)
+			return;
+
+		event.ended = now;
+		event.finished = true;
 	}
 
 	void update(double t)
@@ -309,6 +381,7 @@ struct World(Components...)
 					continue;
 
 				started.finished = true;
+				started.ended = started.end;
 				started.update(1, started.end - start);
 				started.onFinish();
 			}
@@ -327,13 +400,17 @@ struct World(Components...)
 			// start just-started events
 			foreach (ref planned; events[eventEndIndex .. $])
 			{
-				if (planned.start > time || planned.finished)
-					break;
+				if (planned.start > time || planned.finished || planned.remainingRestarts == 0)
+					continue;
+
+				if (planned.remainingRestarts > 0)
+					planned.remainingRestarts--;
 
 				planned.onRestart();
 				if (planned.end < time)
 				{
 					planned.finished = true;
+					planned.ended = planned.end;
 					planned.update(1, planned.end - planned.start);
 					planned.onFinish();
 				}
@@ -365,7 +442,10 @@ struct World(Components...)
 				if (unhappened.finished)
 					unhappened.onUnfinish();
 				else
+				{
 					unhappened.finished = true;
+					unhappened.ended = unhappened.end;
+				}
 				unhappened.update(0, unhappened.start - start);
 				unhappened.onUnstart();
 			}
@@ -375,7 +455,7 @@ struct World(Components...)
 			// so breaking on the first expired one from reverse wouldn't work.
 			foreach_reverse (i, ref unhappened; events[0 .. eventEndIndex])
 			{
-				if (!unhappened.finished || unhappened.end <= time)
+				if (!unhappened.finished || (!isNaN(unhappened.ended) && unhappened.ended <= time))
 					continue;
 
 				unhappened.finished = false;

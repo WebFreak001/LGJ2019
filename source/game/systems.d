@@ -46,10 +46,10 @@ struct Controls
 	double cooldown = 0;
 	double warpTimeLeft = 0;
 
-	void handleEvent(ref GameWorld world, Event event)
+	void handleEvent(Event event)
 	{
 		if (event.type == Event.Type.KeyPressed && event.key == shootKey)
-			shoot(world);
+			shoot();
 		if (event.type == Event.Type.KeyPressed && event.key == speedUpKey)
 		{
 			world.normalSpeed += 0.25f;
@@ -62,7 +62,7 @@ struct Controls
 		}
 	}
 
-	void update(ref GameWorld world, double delta, double deltaWorld)
+	void update(double delta, double deltaWorld)
 	{
 		double movementSpeed = max(0.5, min(2, world.speed));
 		if (world.speed > 0)
@@ -94,7 +94,7 @@ struct Controls
 		}
 
 		if (Keyboard.instance.isPressed(shootKey))
-			shoot(world);
+			shoot();
 
 		vec2 movement = vec2(0, 0);
 		if (Keyboard.instance.isPressed(leftKey))
@@ -108,14 +108,14 @@ struct Controls
 
 		if (movement !is vec2(0, 0))
 		{
-			world.editEntity!((ref entity) {
+			editEntity!((ref entity) {
 				entity.force!PositionComponent.position.moveClamp(movement.normalized * speed * delta * movementSpeed,
 					vec2(CanvasWidth, CanvasHeight));
 			})(player);
 		}
 	}
 
-	void shoot(ref GameWorld world)
+	void shoot()
 	{
 		if (cooldown > 0)
 			return;
@@ -131,7 +131,7 @@ struct Controls
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(-6, 0), 4)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(6, 0), 4)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(12, 0), 4)
-				.create(world, start, 0, 2);
+				.create(start, 0, 2);
 		//dfmt on
 	}
 }
@@ -160,11 +160,11 @@ struct DrawSystem
 		spriteBatch = new SpriteBatch();
 	}
 
-	void draw(ref GameWorld world, IRenderTarget window, ref Controls controls)
+	void draw(IRenderTarget window, ref Controls controls)
 	{
 		spriteBatch.begin(R.spritesheet.textures[0]);
 
-		drawBG(world);
+		drawBG();
 
 		foreach (ref entity; world.entities)
 		{
@@ -202,21 +202,23 @@ struct DrawSystem
 			}
 		}
 
-		drawUI(world, window, controls);
+		drawUI(window, controls);
 
 		spriteBatch.end();
 		spriteBatch.draw(window);
 	}
 
-	void drawUI(ref GameWorld world, IRenderTarget window, ref Controls controls)
+	void drawUI(IRenderTarget window, ref Controls controls)
 	{
 		spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 0),
 				vec2(100 * controls.warpSecondsLeft / controls.maxWarpSeconds, 2));
 
 		debug (History)
 		{
+			enum timewidth = 35.0f; // 40 is full width
+
 			spriteBatch.drawSprite(R.sprites.white4x, vec2(0, 8), vec2(100, 2), vec4(0, 0, 0, 1));
-			spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * (world.now % 10), 8),
+			spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * (world.now % 10), 8),
 					vec2(0.25f, 2), vec4(0, 0, 1, 1));
 			double start = floor(world.now / 10) * 10;
 			double end = start + 10;
@@ -228,27 +230,32 @@ struct DrawSystem
 				double x = event.start - start;
 
 				vec3 color = event.finished ? vec3(0, 1, 0) : vec3(1, 0, 0);
-				spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x, 8),
+				spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x, 8),
 						vec2(0.25f, 2), vec4(color, 0.7f));
-				spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x, 8),
-						vec2(10 * (event.end - event.start), 0.5f), vec4(color, 0.1f));
+				spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x, 8),
+						vec2(timewidth * 0.25f * (event.end - event.start), 0.5f), vec4(color, 0.4f));
+				if (!isNaN(event.ended))
+				{
+					spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * (event.ended - start), 8),
+							vec2(0.5f, 1), vec4(1, 1, 0, 0.6f));
+				}
 
 				if (i == world.eventStartIndex)
 				{
-					spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x - 2,
+					spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x - 2,
 							14), vec2(0.5f, 0.5f), vec4(0, 1, 0, 1));
 				}
 
 				if (i + 1 == world.eventEndIndex)
 				{
-					spriteBatch.drawSprite(R.sprites.white4x, vec2(10 * x, 14),
+					spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x, 14),
 							vec2(0.5f, 0.5f), vec4(0, 0, 1, 1));
 				}
 			}
 		}
 	}
 
-	void drawBG(ref GameWorld world)
+	void drawBG()
 	{
 		int gridSize;
 		vec2i dimensions;
@@ -298,8 +305,6 @@ struct DrawSystem
 		immutable drawWidth = CanvasWidth / gridSize;
 		immutable drawHeight = CanvasHeight / gridSize;
 
-		immutable totalWidth = CanvasWidth + gridSize;
-
 		immutable chunkWidth = dimensions.x * gridSize;
 		immutable chunkHeight = dimensions.y * gridSize;
 
@@ -321,7 +326,7 @@ struct DrawSystem
 
 struct CollisionSystem
 {
-	void update(ref GameWorld world, double deltaWorld)
+	void update(double deltaWorld)
 	{
 		foreach (i, ref entity; world.entities)
 		{
@@ -335,6 +340,11 @@ struct CollisionSystem
 					hp.remainingInvulnerabilityTime = 0;
 				else
 					hp.remainingInvulnerabilityTime -= abs(deltaWorld);
+
+				if (hp.remainingHealTime <= 0)
+					hp.remainingHealTime = 0;
+				else
+					hp.remainingHealTime -= abs(deltaWorld);
 			}
 
 			auto collider = entity.get!CollisionComponent;
@@ -356,21 +366,21 @@ struct CollisionSystem
 				{
 					auto center = (position.position + otherPosition.position) * 0.5f;
 					if (collider.onCollide)
-						collider.onCollide(world, entity, other, center, false);
+						collider.onCollide(entity, other, center, false);
 					else
-						defaultCollisionCallback(world, entity, other, center, false);
+						defaultCollisionCallback(entity, other, center, false);
 
 					if (otherCollider.onCollide)
-						otherCollider.onCollide(world, other, entity, center, true);
+						otherCollider.onCollide(other, entity, center, true);
 					else
-						defaultCollisionCallback(world, other, entity, center, true);
+						defaultCollisionCallback(other, entity, center, true);
 				}
 			}
 		}
 	}
 }
 
-void defaultCollisionCallback(ref GameWorld world, ref GameWorld.WorldEntity self,
+void defaultCollisionCallback(ref GameWorld.WorldEntity self,
 		ref GameWorld.WorldEntity other, vec2 center, bool second)
 {
 	auto selfHp = self.get!HealthComponent;
@@ -381,8 +391,8 @@ void defaultCollisionCallback(ref GameWorld world, ref GameWorld.WorldEntity sel
 		if (selfHp.remainingInvulnerabilityTime <= 0 && otherHp.remainingInvulnerabilityTime <= 0)
 		{
 			auto hp = min(selfHp.hp, otherHp.hp);
-			selfHp.gotHit(world, self, hp);
-			otherHp.gotHit(world, other, hp);
+			selfHp.gotHit(self, hp);
+			otherHp.gotHit(other, hp);
 		}
 	}
 }

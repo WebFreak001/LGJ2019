@@ -47,7 +47,7 @@ struct CollisionComponent
 
 	Circle[8] circles;
 	Mask type;
-	void delegate(ref GameWorld world, ref GameWorld.WorldEntity self,
+	void delegate(ref GameWorld.WorldEntity self,
 			ref GameWorld.WorldEntity other, vec2 center, bool second) onCollide;
 
 	bool collides(vec2 offset, CollisionComponent other, vec2 otherOffset)
@@ -80,28 +80,38 @@ struct CollisionComponent
 struct HealthComponent
 {
 	int maxHp = 1, hp = 0;
-	double invulnerabilityTime = 0.5;
+	double invulnerabilityTime = 0.1;
 	double remainingInvulnerabilityTime = 0;
-	void delegate(ref GameWorld world, ref GameWorld.WorldEntity entity, int dmg) onDamage;
+	double remainingHealTime = 0;
+	void delegate(ref GameWorld.WorldEntity entity, int dmg) onDamage;
 
-	void gotHit(ref GameWorld world, ref GameWorld.WorldEntity entity, int dmg)
+	void gotHit(ref GameWorld.WorldEntity entity, int dmg, bool callback = true)
 	{
-		if (dmg > hp)
-			hp = 0;
+		if (onDamage && callback)
+		{
+			if (dmg > 0)
+				remainingInvulnerabilityTime = invulnerabilityTime;
+			else if (dmg < 0)
+				remainingHealTime = invulnerabilityTime;
+
+			onDamage(entity, dmg);
+		}
 		else
-			hp -= dmg;
-
-		remainingInvulnerabilityTime = invulnerabilityTime;
-
-		if (onDamage)
-			onDamage(world, entity, dmg);
+		{
+			if (dmg > hp)
+				hp = 0;
+			else
+				hp -= dmg;
+		}
 	}
 }
 
 alias GameWorld = World!(PositionComponent, DisplayComponent,
 		ComplexDisplayComponent, CollisionComponent, HealthComponent);
 
-void editEntity(alias callback)(ref GameWorld world, Entity entity)
+__gshared GameWorld world;
+
+void editEntity(alias callback)(Entity entity)
 {
 	auto index = world.getEntity(entity);
 	if (index >= 0)
