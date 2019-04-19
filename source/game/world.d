@@ -125,6 +125,24 @@ struct Entity
 	}
 }
 
+ptrdiff_t binarySearch(alias cmp, T)(auto ref const T[] array)
+{
+	ptrdiff_t l;
+	ptrdiff_t r = array.length;
+	while (l <= r)
+	{
+		auto m = (l + r) / 2;
+		auto c = cmp(array.ptr[m]);
+		if (c < 0)
+			l = m + 1;
+		else if (c > 0)
+			r = m - 1;
+		else
+			return m;
+	}
+	return ~l;
+}
+
 struct World(Components...)
 {
 	static assert(Components.length <= 32, "Can manage at most 32 components");
@@ -195,19 +213,7 @@ struct World(Components...)
 	/// Returns the index of the entity in the entities array or the bitwise complement of the element that is immediately smaller than the seach item. (~n, always negative)
 	ptrdiff_t getEntity(Entity entity)
 	{
-		ptrdiff_t l;
-		ptrdiff_t r = entities.length;
-		while (l <= r)
-		{
-			auto m = (l + r) / 2;
-			if (entities.ptr[m].entity.id < entity.id)
-				l = m + 1;
-			else if (entities.ptr[m].entity.id > entity.id)
-				r = m - 1;
-			else
-				return m;
-		}
-		return ~l;
+		return entities.binarySearch!((a) => cast(long) a.entity.id - cast(long) entity.id);
 	}
 
 	Entity putEntity(Coms...)(Coms components)
@@ -237,14 +243,55 @@ struct World(Components...)
 
 	void put(History event)
 	{
-		// TODO: insert events into history
 		if (eventEndIndex < events.length)
 			events.length = eventEndIndex;
 
-		if (events.length)
-			assert(events[$ - 1].start < event.start);
+		if (!events.length || event.start >= events[$ - 1].start)
+		{
+			events.assumeSafeAppend ~= event;
+			return;
+		}
+		else
+			events.assumeSafeAppend ~= event;
 
-		events.assumeSafeAppend ~= event;
+		auto index = events[0 .. $ - 1].binarySearch!((a) => a.start - event.start);
+		if (index < 0)
+			index = ~index;
+		if (index < eventEndIndex)
+			eventEndIndex++;
+
+		if (index < eventStartIndex)
+		{
+			event.onRestart();
+			if (now > event.end)
+			{
+				event.update(0, 0);
+				event.onFinish();
+				event.finished = true;
+			}
+			else
+			{
+				assert(now >= event.start);
+				event.update((now - event.start) / (event.end - event.start), 0);
+				event.finished = false;
+			}
+			eventStartIndex++;
+		}
+		else
+		{
+			if (now >= event.start)
+			{
+				event.onRestart();
+				event.update((now - event.start) / (event.end - event.start), 0);
+			}
+			event.finished = false;
+		}
+
+		foreach_reverse (i; index .. events.length)
+			events[i] = events[i - 1];
+		events[index] = event;
+
+		assert(events.isSorted!"a.start <= b.start");
 	}
 
 	void update(double t)
