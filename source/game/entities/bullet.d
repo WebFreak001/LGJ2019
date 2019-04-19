@@ -46,10 +46,7 @@ abstract class HistoryEntity : IHistory
 		this.edit!((ref entity) { entity.entity.dead = dead; });
 
 		if (dead && onDeath)
-		{
 			onDeath();
-			onDeath = null;
-		}
 	}
 
 	void onUnstart()
@@ -97,7 +94,7 @@ abstract class DrawableHistoryEntity : HistoryEntity
 	}
 }
 
-private void edit(alias cb)(HistoryEntity he)
+void edit(alias cb)(HistoryEntity he)
 {
 	editEntity!cb(he.entity);
 }
@@ -211,9 +208,9 @@ class BulletEntity(Base) : Base
 					auto health = entity.get!HealthComponent;
 					if (health)
 					{
-						health.gotHit(entity, dmg, false);
-						if (health.hp <= 0)
-							makeDead(true);
+						health.gotHit(entity, -dmg, false);
+						if (health.hp > 0)
+							makeDead(false);
 					}
 				})(this);
 			}, {
@@ -221,9 +218,9 @@ class BulletEntity(Base) : Base
 					auto health = entity.get!HealthComponent;
 					if (health)
 					{
-						health.gotHit(entity, -dmg, false);
-						if (health.hp > 0)
-							makeDead(false);
+						health.gotHit(entity, dmg, false);
+						if (health.hp <= 0)
+							makeDead(true);
 					}
 				})(this);
 			}));

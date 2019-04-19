@@ -31,6 +31,7 @@ struct CollisionComponent
 {
 	enum Mask : uint
 	{
+		none = 0,
 		player = 1U << 0,
 		enemyGeneric = 1U << 1,
 

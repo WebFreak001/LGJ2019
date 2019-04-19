@@ -20,6 +20,7 @@ struct History
 	void delegate(double progress, double deltaTime) _update;
 	bool finished;
 	uint id;
+	uint parent = uint.max;
 	double ended;
 	int remainingRestarts = -1;
 
@@ -80,16 +81,18 @@ struct History
 		return ret;
 	}
 
-	static History makeTrigger(double at, void delegate() undo, void delegate() redo)
+	static History makeTrigger(double at, void delegate() undo, void delegate() redo,
+			uint parent = uint.max, int repeats = 1)
 	{
 		//dfmt off
 		History ret = {
 			start: at,
 			end: at,
-			_onUnstart: redo,
-			_onRestart: undo,
+			_onUnstart: undo,
+			_onRestart: redo,
 			id: counter++,
-			remainingRestarts: 1
+			parent: parent,
+			remainingRestarts: repeats
 		};
 		//dfmt on
 		return ret;
@@ -268,8 +271,8 @@ struct World(Components...)
 		{
 			if (events[i].finished)
 			{
-				foreach (j, ref other; events[i + 1 .. $])
-					events[i - j + 2] = other;
+				foreach (j; i + 1 .. events.length)
+					events[j - 1] = events[j];
 				events.length--;
 			}
 		}
@@ -277,7 +280,9 @@ struct World(Components...)
 		if (!events.length || event.start >= events[$ - 1].start)
 		{
 			events.assumeSafeAppend ~= event;
-			import std.stdio; writeln("Putting history at end ", events.length - 1);
+			import std.stdio;
+
+			writeln("Putting history at end ", events.length - 1);
 			return;
 		}
 		else
@@ -316,10 +321,12 @@ struct World(Components...)
 			event.finished = false;
 		}
 
-		foreach_reverse (i; index .. events.length)
+		foreach_reverse (i; index + 1 .. events.length)
 			events[i] = events[i - 1];
 		events[index] = event;
-		import std.stdio; writeln("Putting history at ", index, ", length is now ", events.length);
+		import std.stdio;
+
+		writeln("Putting history at ", index, ", length is now ", events.length);
 
 		assert(events.isSorted!"a.start < b.start");
 	}
@@ -359,11 +366,22 @@ struct World(Components...)
 		if (!events.length)
 			return;
 		auto event = &findHistory(startHint, entryID);
-		if (event.id != entryID)
+		if (event.id != entryID || event.finished)
 			return;
 
 		event.ended = now;
 		event.finished = true;
+	}
+
+	bool isHistoryAlive(uint id)
+	{
+		if (id == uint.max)
+			return true;
+
+		foreach (event; events[eventStartIndex .. eventEndIndex])
+			if (event.id == id)
+				return !event.finished;
+		return false;
 	}
 
 	void update(double t)
@@ -402,6 +420,12 @@ struct World(Components...)
 			{
 				if (planned.start > time || planned.finished || planned.remainingRestarts == 0)
 					continue;
+
+				if (!isHistoryAlive(planned.parent))
+				{
+					planned.finished = true;
+					continue;
+				}
 
 				if (planned.remainingRestarts > 0)
 					planned.remainingRestarts--;

@@ -231,7 +231,7 @@ struct DrawSystem
 
 				vec3 color = event.finished ? vec3(0, 1, 0) : vec3(1, 0, 0);
 				spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x, 8),
-						vec2(0.25f, 2), vec4(color, 0.7f));
+						vec2(0.25f, 2), vec4(color, 0.6f));
 				spriteBatch.drawSprite(R.sprites.white4x, vec2(timewidth * x, 8),
 						vec2(timewidth * 0.25f * (event.end - event.start), 0.5f), vec4(color, 0.4f));
 				if (!isNaN(event.ended))

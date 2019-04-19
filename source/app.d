@@ -50,11 +50,11 @@ public:
 		bgMusic = LoopingMusic(new Music("res/music/spacinginspace.mp3"),
 				new Music("res/music/spacinginspace-main.mp3"));
 
-		bgMusic.start();
+		// bgMusic.start();
 
 		CollisionComponent playerCollision;
 		playerCollision.type = CollisionComponent.Mask.player;
-		playerCollision.circles[0].radius = 16;
+		playerCollision.circles[0].radius = 4;
 		playerCollision.circles[0].mask = CollisionComponent.Mask.playerShot;
 		controls.player = world.putEntity(PositionComponent(vec2(CanvasWidth / 2,
 				CanvasHeight / 2)), ComplexDisplayComponent(R.sprites.player),
@@ -79,6 +79,41 @@ public:
 			self.finished = true;
 			world.endNow(start, enemy.historyID);
 		};
+		makeChildEffects(self, enemy, world.now + 1);
+	}
+
+	void makeChildEffects(ref Section.Event event, LinearBulletEntity entity, double time)
+	{
+		world.put(History.makeTrigger(time, {
+				makeChildEffects(event, entity, time);
+			}, {
+				if (event.finished)
+					return;
+				shootChild(entity);
+				makeChildEffects(event, entity, world.now + 1);
+			}, entity.historyID, -1));
+	}
+
+	void shootChild(LinearBulletEntity entity)
+	{
+		entity.edit!((ref entity) {
+			vec2 start = entity.read!PositionComponent.position + vec2(0, 16);
+
+			vec2 direction = vec2(-1, 0);
+			editEntity!((ref entity) {
+				direction = (entity.read!PositionComponent.position - start).normalized;
+			})(controls.player);
+
+			//dfmt off
+			new LinearBulletEntity(R.sprites.lazer, direction * 300, vec2(1), vec4(1, 1, 1, 1))
+					.maxHealth(1)
+					.addCircle(CollisionComponent.Mask.enemyShot, vec2(-12, 0), 4)
+					.addCircle(CollisionComponent.Mask.enemyShot, vec2(-6, 0), 4)
+					.addCircle(CollisionComponent.Mask.enemyShot, vec2(6, 0), 4)
+					.addCircle(CollisionComponent.Mask.enemyShot, vec2(12, 0), 4)
+					.create(start, 0, 2);
+			//dfmt on
+		});
 	}
 
 	override void update(float delta)
