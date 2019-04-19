@@ -1,4 +1,5 @@
 name "lgj2019"
+license "MIT"
 
 dependency "d2dgame" path="D2DGame"
 
