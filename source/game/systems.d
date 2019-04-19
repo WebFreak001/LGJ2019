@@ -275,16 +275,39 @@ struct DrawSystem
 		drawBGLayer(tileset1[], bitmap1[], dimensions, gridSize,
 				vec2(-world.now * 4, -world.now * 0.2f));
 
-		// Buildings
+		// Distant buildings
 		gridSize = 16;
 		//dfmt off
-		Crunch.Image[3 * 4] tileset2 = [
+		Crunch.Image[2 * 4] tileset2 = [
+			R.sprites.city_layer2_0, R.sprites.city_layer2_1,
+			R.sprites.city_layer2_2, R.sprites.city_layer2_3,
+			R.sprites.city_layer2_4, R.sprites.city_layer2_5,
+			R.sprites.city_layer2_6, R.sprites.city_layer2_7
+		];
+		size_t[10 * 4] bitmap2 = [
+			2,3, 0,0, 2,3, 0,0, 0,0,
+			4,5, 2,3, 4,5, 2,3, 2,3,
+			4,5, 4,5, 4,5, 4,5, 4,5,
+			6,7, 6,7, 6,5, 4,5, 4,7
+		];
+		//dfmt on
+		dimensions = vec2i(10, 4);
+		drawBGLayer(tileset2[], bitmap2[], dimensions, gridSize,
+				vec2(-world.now * 12, 0), vec2(0, 208 + 6 * 16));
+
+		// Ground
+
+
+		// Foreground buildings
+		gridSize = 16;
+		//dfmt off
+		Crunch.Image[3 * 4] tileset4 = [
 			R.sprites.city_layer1_0, R.sprites.city_layer1_1, R.sprites.city_layer1_2,
 			R.sprites.city_layer1_3, R.sprites.city_layer1_4, R.sprites.city_layer1_5,
 			R.sprites.city_layer1_6, R.sprites.city_layer1_7, R.sprites.city_layer1_8,
 			R.sprites.city_layer1_9, R.sprites.city_layer1_10, R.sprites.city_layer1_11
 		];
-		size_t[18 * 6] bitmap2 = [
+		size_t[18 * 6] bitmap4 = [
 			0,1,2, 3,0,0, 0,0,0,0, 0,0,0, 0,0,0,0,0,
 			4,6,6, 7,0,0, 0,0,0,0, 0,0,0, 0,0,0,0,0,
 			4,6,6, 7,0,0, 0,0,0,0, 0,0,0, 0,0,0,1,3,
@@ -294,8 +317,9 @@ struct DrawSystem
 		];
 		//dfmt on
 		dimensions = vec2i(18, 6);
-		drawBGLayer(tileset2[], bitmap2[], dimensions, gridSize,
+		drawBGLayer(tileset4[], bitmap4[], dimensions, gridSize,
 				vec2(-world.now * 32, 0), vec2(0, 208 + 6 * 16));
+
 	}
 
 	/// Draws a tiling background with set scroll. Starts drawing at -dimensions and not at 0
