@@ -2,9 +2,10 @@ import d2d;
 
 import resources;
 
-import game.entities.bullet;
 import game.components;
+import game.entities.bullet;
 import game.level;
+import game.loopingmusic;
 import game.systems;
 import game.world;
 
@@ -41,8 +42,15 @@ public:
 
 	override void load()
 	{
+		Music.load();
+
 		R.load();
 		drawSystem.load();
+
+		bgMusic = LoopingMusic(new Music("res/music/spacinginspace.mp3"),
+				new Music("res/music/spacinginspace-main.mp3"));
+
+		bgMusic.start();
 
 		CollisionComponent playerCollision;
 		playerCollision.type = CollisionComponent.Mask.player;
@@ -54,9 +62,7 @@ public:
 
 		Section section;
 		section.events ~= Section.Event(3, &spawnEnemy);
-		section.events ~= Section.Event(5, (ref self) {
-			writeln("endless wait");
-		});
+		section.events ~= Section.Event(5, (ref self) { writeln("endless wait"); });
 		level.sections ~= section;
 	}
 
@@ -69,11 +75,16 @@ public:
 					CollisionComponent.Mask.enemyShot, vec2(0, 0), 16);
 		auto start = world.now;
 		enemy.create(vec2(CanvasWidth + 16, CanvasHeight / 2), 0, 4.5);
-		enemy.onDeath = () { self.finished = true; world.endNow(start, enemy.historyID); };
+		enemy.onDeath = () {
+			self.finished = true;
+			world.endNow(start, enemy.historyID);
+		};
 	}
 
 	override void update(float delta)
 	{
+		bgMusic.update();
+
 		if (paused)
 			return;
 
