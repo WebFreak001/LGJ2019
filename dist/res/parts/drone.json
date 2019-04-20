@@ -1,0 +1,14 @@
+{
+	"sprite": "drone",
+	"velocity": [-15, 0],
+	"rotation": 0,
+	"hp": 1,
+	"type": "enemyGeneric",
+	"circles": [
+		{
+			"mask": "enemyShot",
+			"radius": 8
+		}
+	],
+	"length": 30
+}

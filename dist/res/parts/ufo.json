@@ -1,0 +1,15 @@
+{
+	"sprite": "ufo",
+	"velocity": [-100, 0],
+	"rotation": 0,
+	"hp": 2,
+	"type": "enemyGeneric",
+	"circles": [
+		{
+			"mask": "enemyShot",
+			"radius": 16
+		}
+	],
+	"length": 4.5,
+	"invuln_time": 0.1
+}
