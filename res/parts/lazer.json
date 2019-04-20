@@ -1,0 +1,28 @@
+{
+	"sprite": "lazer",
+	"velocity": [600, 0],
+	"hp": 1,
+	"circles": [
+		{
+			"mask": "enemyShot",
+			"offset": [-12, 0],
+			"radius": 4
+		},
+		{
+			"mask": "enemyShot",
+			"offset": [-6, 0],
+			"radius": 4
+		},
+		{
+			"mask": "enemyShot",
+			"offset": [6, 0],
+			"radius": 4
+		},
+		{
+			"mask": "enemyShot",
+			"offset": [12, 0],
+			"radius": 4
+		}
+	],
+	"length": 2
+}

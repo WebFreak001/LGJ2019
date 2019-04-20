@@ -281,9 +281,6 @@ struct World(Components...)
 		if (!events.length || event.start >= events[$ - 1].start)
 		{
 			events.assumeSafeAppend ~= event;
-			import std.stdio;
-
-			writeln("Putting history at end ", events.length - 1);
 			return;
 		}
 		else
@@ -325,10 +322,6 @@ struct World(Components...)
 		foreach_reverse (i; index + 1 .. events.length)
 			events[i] = events[i - 1];
 		events[index] = event;
-		import std.stdio;
-
-		writeln("Putting history at ", index, ", length is now ", events.length);
-
 		assert(events.isSorted!"a.start < b.start");
 	}
 

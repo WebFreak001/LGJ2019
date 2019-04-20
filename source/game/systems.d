@@ -125,7 +125,7 @@ struct Controls
 				16);
 
 		//dfmt off
-		new QuadraticBulletEntity(R.sprites.torpedo, vec2(600, 0), vec2(1), vec4(1, 1, 1, 1))
+		new QuadraticEntity(R.sprites.torpedo, vec2(600, 0), vec2(1), vec4(1, 1, 1, 1))
 				.maxHealth(1)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(-12, 0), 4)
 				.addCircle(CollisionComponent.Mask.playerShot, vec2(-6, 0), 4)
@@ -135,6 +135,7 @@ struct Controls
 		//dfmt on
 	}
 }
+Controls controls;
 
 private void moveClamp(ref vec2 position, vec2 movement, vec2 clamp)
 {
