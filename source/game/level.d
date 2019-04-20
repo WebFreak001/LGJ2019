@@ -5,6 +5,10 @@ import game.entities.bullet;
 import game.systems;
 import game.world;
 
+import gl3n.linalg;
+import crunch;
+import resources;
+
 import std.algorithm;
 import std.conv;
 import std.json;
@@ -15,11 +19,18 @@ import std.string;
 /// A Section is a list of reversible events that can occur multiple times.
 struct Section
 {
-	struct Event
+	class Event
 	{
 		double time;
-		void delegate(ref Event self) call;
+		void delegate(Event self) call;
 		bool finished;
+
+		this(double time, void delegate(Event self) call = null, bool finished = false)
+		{
+			this.time = time;
+			this.call = call;
+			this.finished = finished;
+		}
 	}
 
 	Event[] events;
@@ -104,7 +115,7 @@ struct Level
 				continue;
 
 			auto test = line.startsWith("generator", "bullets", "unset", "push",
-					"patch", "spawn", "wait");
+					"patch", "spawn", "wait", "toast");
 			if (test == 0)
 			{
 				stderr.writeln("Syntax error in line ", lineNo,
@@ -208,7 +219,7 @@ struct Level
 						foreach (key, value; json.object)
 							gen.setJson(key, value);
 					}
-					ret.sections[$ - 1].events ~= Section.Event(start, gen.store());
+					ret.sections[$ - 1].events ~= new Section.Event(start, gen.store());
 				}
 				else
 					stderr.writeln("Error in line ", lineNo, ": Could not find generator '", name, "'");
@@ -222,7 +233,7 @@ struct Level
 
 				if (!isNaN(start) && !isNaN(length))
 				{
-					ret.sections[$ - 1].events ~= Section.Event(start, (ref event) {
+					ret.sections[$ - 1].events ~= new Section.Event(start, (event) {
 						if (length == double.infinity)
 						{
 							writeln("endless wait (level won't terminate)");
@@ -234,6 +245,53 @@ struct Level
 								}, { event.finished = true; }));
 						}
 					});
+				}
+			}
+			else if (test == 8)
+			{
+				// toast
+				line = line["toast".length .. $].stripLeft;
+				auto start = parseDuration(line, lineNo);
+				auto length = parseDuration(line, lineNo);
+				auto name = line;
+
+				if (!isNaN(start) && !isNaN(length))
+				{
+					Crunch.Image sprite;
+					foreach (ref image; R.spritesheet.sprites.textures[0].images)
+						if (image.name == name)
+						{
+							sprite = image;
+							break;
+						}
+					if (sprite == Crunch.Image.init)
+					{
+						stderr.writeln("Error in line ", lineNo, ": Could not find toast sprite");
+					}
+					else
+					{
+						auto display = DisplayComponent(sprite, vec4(1), vec2(0.5));
+						Entity overlay = world.putEntity(Dead.yes, display,
+								PositionComponent(vec2((CanvasWidth - sprite.width * 0.5f) * 0.5f,
+									CanvasHeight - sprite.height * 0.5f - 16)));
+						ret.sections[$ - 1].events ~= new Section.Event(start, (event) {
+							world.put(History.makeSimple(start, length, {
+									overlay.editEntity!((ref overlay) { overlay.entity.dead = true; });
+								}, {
+									overlay.editEntity!((ref overlay) {
+										overlay.entity.dead = false;
+									});
+								}, (progress, deltaTime) {
+									overlay.editEntity!((ref overlay) {
+										float opacity = progress < 0.1f ? progress / 0.1f : progress > 0.9f
+										? (1 - progress) / 0.1f : 1;
+										display.color = vec4(1, 1, 1, opacity);
+										overlay.write(display);
+										overlay.entity.dead = false;
+									});
+								}));
+						});
+					}
 				}
 			}
 		}

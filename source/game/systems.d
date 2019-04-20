@@ -1,6 +1,6 @@
 module game.systems;
 
-debug = History;
+// debug = History;
 
 import d2d;
 
@@ -179,7 +179,7 @@ struct DrawSystem
 
 			if (img !is DisplayComponent.init)
 			{
-				spriteBatch.drawSprite(img.sprite, position.position, img.color);
+				spriteBatch.drawSprite(img.sprite, position.position, img.scale, img.color);
 				height = img.sprite.height;
 			}
 

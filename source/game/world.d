@@ -81,6 +81,27 @@ struct History
 		return ret;
 	}
 
+	static History makeSimple(double at, double length, void delegate() undo,
+			void delegate() redo, void delegate(double progress,
+				double deltaTime) update = null, uint parent = uint.max, int repeats = 1)
+	{
+		//dfmt off
+		History ret = {
+			start: at,
+			end: at + length,
+			_onUnstart: undo,
+			_onRestart: redo,
+			_onFinish: undo,
+			_onUnfinish: redo,
+			_update: update,
+			id: counter++,
+			parent: parent,
+			remainingRestarts: repeats
+		};
+		//dfmt on
+		return ret;
+	}
+
 	static History makeTrigger(double at, void delegate() undo, void delegate() redo,
 			uint parent = uint.max, int repeats = 1)
 	{

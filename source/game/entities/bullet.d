@@ -168,17 +168,30 @@ class GenericDrawableHistoryEntity : DirectionalDrawableHistoryEntity!((e, start
 	InterpolationFunc interpolate;
 }
 
-enum InterpolationFuncs : InterpolationFunc
+static immutable InterpolationFuncs = [
+	"linear", "quadratic", "cubic", "quartic", "quintic", "boss1"
+];
+InterpolationFunc interp_linear = (start, end, t) => (end - start) * t + start;
+InterpolationFunc interp_quadratic = (start, end, t) => (end - start) * t * t + start;
+InterpolationFunc interp_cubic = (start, end, t) => (end - start) * t * t * t + start;
+InterpolationFunc interp_quartic = (start, end, t) => (end - start) * t * t * t * t + start;
+InterpolationFunc interp_quintic = (start, end, t) => (end - start) * t * t * t * t * t + start;
+InterpolationFunc interp_boss1 = (start, end, t) => boss1Interpolation(start, end, t);
+
+vec2 boss1Interpolation(vec2 start, vec2 end, double progress)
 {
-	linear = (start, end, t) => (end - start) * t + start,
-	quadratic = (start, end,
-			t) => (end - start) * t * t + start,
-	cubic = (start, end,
-			t) => (end - start) * t * t * t + start,
-	quartic = (start, end,
-			t) => (end - start) * t * t * t * t + start,
-	quintic = (start, end,
-			t) => (end - start) * t * t * t * t * t + start,
+	enum double fadeInTime = 0.000002;
+	if (progress < fadeInTime)
+	{
+		progress /= fadeInTime;
+		progress = 1 - progress;
+		return (end - start) * (1 - progress * progress) + start;
+	}
+	else
+	{
+		vec2 orthogonal = (end - start).yx.normalized;
+		return end + orthogonal * sin((progress - fadeInTime) * 2_000_000) * 120;
+	}
 }
 
 class BasicMovingEntity(Base) : Base
@@ -275,7 +288,7 @@ class GenericEntityBuilder
 	vec2 position;
 	double offset = 0, length = 0, interval = 0;
 	vec2 velocity = vec2(0);
-	InterpolationFunc interpolation = InterpolationFuncs.linear;
+	InterpolationFunc interpolation;
 	vec2 scale = vec2(1);
 	vec4 color = vec4(1);
 	float rotation = float.nan;
@@ -324,6 +337,21 @@ class GenericEntityBuilder
 			return readNumeric(property, json, interval);
 		case "rotation":
 			return readNumeric(property, json, rotation);
+		case "interpolation":
+			if (json.type != JSONType.string)
+			{
+				stderr.writeln("interpolation property only accepts strings");
+				return false;
+			}
+			static foreach (member; InterpolationFuncs)
+				if (json.str == member)
+					{
+					interpolation = mixin("interp_" ~ member);
+					return true;
+				}
+			stderr.writefln("unknown interpolation property '%s', only accepts %(%s, %)",
+					json.str, InterpolationFuncs);
+			return false;
 		case "max_hp":
 		case "hp":
 			return readNumeric(property, json, maxHp);
@@ -394,19 +422,21 @@ class GenericEntityBuilder
 			entity.type(collision);
 		if (interpolation !is null)
 			entity.interpolate = interpolation;
+		else
+			entity.interpolate = interp_linear;
 
 		foreach (circle; circles)
 			entity.addCircle(cast(CollisionComponent.Mask) circle.mask, circle.center, circle.radius);
 		return entity;
 	}
 
-	void delegate(ref Section.Event event) store()
+	void delegate(Section.Event event) store()
 	{
 		auto position = this.position;
 		auto offset = this.offset;
 		auto length = this.length;
 		auto entity = prepare();
-		return (ref event) {
+		return (event) {
 			entity.create(position, offset, length);
 			postSpawn(event, entity);
 		};
@@ -419,14 +449,14 @@ class GenericEntityBuilder
 		return entity;
 	}
 
-	GenericMovingEntity build(ref Section.Event event)
+	GenericMovingEntity build(Section.Event event)
 	{
 		auto entity = build();
 		postSpawn(event, entity);
 		return entity;
 	}
 
-	void postSpawn(ref Section.Event event, GenericMovingEntity entity)
+	void postSpawn(Section.Event event, GenericMovingEntity entity)
 	{
 		auto start = world.now + offset;
 
@@ -439,7 +469,7 @@ class GenericEntityBuilder
 			makeChildEffects(event, entity, bulletGen, world.now + bulletGen.offset + bulletGen.interval);
 	}
 
-	void makeChildEffects(ref Section.Event event, GenericMovingEntity entity,
+	void makeChildEffects(Section.Event event, GenericMovingEntity entity,
 			GenericEntityBuilder bullets, double time)
 	{
 		world.put(History.makeTrigger(time, {
@@ -447,12 +477,12 @@ class GenericEntityBuilder
 			}, {
 				if (event.finished)
 					return;
-				shootChild(entity, bullets);
+				shootChild(event, entity, bullets);
 				makeChildEffects(event, entity, bullets, world.now + bullets.interval);
 			}, entity.historyID, -1));
 	}
 
-	void shootChild(GenericMovingEntity parent, GenericEntityBuilder bullets)
+	void shootChild(Section.Event event, GenericMovingEntity parent, GenericEntityBuilder bullets)
 	{
 		parent.edit!((ref parent) {
 			vec2 start = parent.read!PositionComponent.position + vec2(0, 16);
@@ -475,7 +505,7 @@ class GenericEntityBuilder
 
 			bullets.position = start;
 			bullets.offset = 0;
-			bullets.build();
+			bullets.build(event);
 			bullets.velocity = bvelocity;
 			bullets.offset = offset;
 		});

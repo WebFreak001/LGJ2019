@@ -21,6 +21,8 @@ private:
 
 	Level level;
 
+	RectangleShape gameOverScreen;
+
 protected:
 	override void onEvent(Event event)
 	{
@@ -49,7 +51,7 @@ public:
 		bgMusic = LoopingMusic(new Music("res/music/spacinginspace.mp3"),
 				new Music("res/music/spacinginspace-main.mp3"));
 
-		// bgMusic.start();
+		bgMusic.start();
 
 		CollisionComponent playerCollision;
 		playerCollision.type = CollisionComponent.Mask.player;
@@ -60,6 +62,9 @@ public:
 				HealthComponent(3, 3), playerCollision);
 
 		level = Level.parse(File("res/level.txt").byLine);
+
+		gameOverScreen = RectangleShape.create(new Texture("res/screen/gameover.png",
+				TextureFilterMode.Nearest, TextureFilterMode.Nearest), vec2(0), vec2(400, 304));
 	}
 
 	override void update(float delta)
@@ -83,7 +88,15 @@ public:
 		window.clear(drawSystem.bg.fR, drawSystem.bg.fG, drawSystem.bg.fB);
 		matrixStack.top = mat4.scaling(CanvasScale, CanvasScale, 1);
 
-		drawSystem.draw(window, controls);
+		bool dead = false;
+		controls.player.editEntity!((ref player) {
+			auto health = player.read!HealthComponent;
+			dead = health.hp == 0;
+		});
+		if (dead)
+			window.draw(gameOverScreen);
+		else
+			drawSystem.draw(window, controls);
 	}
 }
 

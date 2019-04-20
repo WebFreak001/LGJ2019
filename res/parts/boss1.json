@@ -1,0 +1,16 @@
+{
+	"sprite": "boss1",
+	"velocity": [-0.00004, 0],
+	"rotation": 0,
+	"hp": 100,
+	"type": "enemyGeneric",
+	"circles": [
+		{
+			"mask": "enemyShot",
+			"radius": 32
+		}
+	],
+	"length": 2000000.0,
+	"invuln_time": 0.05,
+	"interpolation": "boss1"
+}

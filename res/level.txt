@@ -1,6 +1,11 @@
 generator ufo from res/parts/ufo.json
-generator drone from res/parts/drone.json
+generator virus from res/parts/virus.json
+generator drone1 from res/parts/drone.json
+generator drone2 from res/parts/drone.json
 generator lazer from res/parts/lazer.json
+generator lazer1 from res/parts/lazer.json
+generator lazer2 from res/parts/lazer.json
+generator boss1 from res/parts/boss1.json
 
 generator bullet1 from res/parts/bullet.json
 generator bullet2 from res/parts/bullet.json
@@ -9,7 +14,11 @@ generator bullet4 from res/parts/bullet.json
 generator bullet5 from res/parts/bullet.json
 generator bullet6 from res/parts/bullet.json
 
+patch drone1 {"interval": 6, "velocity": [-15, 5]}
+patch drone2 {"interval": 6, "offset": 3, "velocity": [-15, -5]}
 patch lazer {"interval": 1}
+patch lazer1 {"interval": 1, "velocity": [300, 40]}
+patch lazer2 {"interval": 1, "velocity": [300, -40]}
 
 patch bullet1 {"interval": 1, "offset": 0,   "velocity": [400, 0]}
 patch bullet2 {"interval": 1, "offset": 0.1, "velocity": [200, 346.4102]}
@@ -20,33 +29,77 @@ patch bullet6 {"interval": 1, "offset": 0.5, "velocity": [200, -346.4102]}
 
 bullets ufo lazer
 
-bullets drone bullet1
-bullets drone bullet2
-bullets drone bullet3
-bullets drone bullet4
-bullets drone bullet5
-bullets drone bullet6
+bullets virus lazer1
+bullets virus lazer2
+
+bullets drone1 bullet1
+bullets drone1 bullet2
+bullets drone1 bullet3
+bullets drone1 bullet4
+bullets drone1 bullet5
+bullets drone1 bullet6
+
+bullets drone2 bullet1
+bullets drone2 bullet2
+bullets drone2 bullet3
+bullets drone2 bullet4
+bullets drone2 bullet5
+bullets drone2 bullet6
+
+bullets boss1 drone1
+bullets boss1 drone2
 
 unset generator lazer
+unset generator lazer1
+unset generator lazer2
+unset generator bullet1
+unset generator bullet2
+unset generator bullet3
+unset generator bullet4
+unset generator bullet5
+unset generator bullet6
 
 push section
 
-spawn 3s ufo {"position": [416, 32]}
 spawn 3s ufo {"position": [416, 152]}
-spawn 3s ufo {"position": [416, 272]}
+spawn 4s ufo {"position": [416, 32]}
+spawn 4s ufo {"position": [416, 272]}
 
-spawn 5s drone {"position": [416, 92]}
-spawn 5s drone {"position": [416, 212]}
+spawn 7s ufo {"position": [416, 32]}
+spawn 7s ufo {"position": [416, 272]}
+spawn 8s virus {"position": [416, 152]}
 
 push section
 
 spawn 1s ufo {"position": [416, 152]}
 spawn 2s ufo {"position": [416, 152]}
-spawn 3s ufo {"position": [416, 152]}
-spawn 4s ufo {"position": [416, 152]}
-spawn 5s ufo {"position": [416, 152]}
+spawn 3s ufo {"position": [416, 32]}
+spawn 3s ufo {"position": [416, 272]}
+spawn 3.5s virus {"position": [416, 152]}
+spawn 4s ufo {"position": [416, 32]}
+spawn 4s ufo {"position": [416, 272]}
+spawn 5s ufo {"position": [416, 32]}
+spawn 5s ufo {"position": [416, 112]}
+spawn 5s ufo {"position": [416, 192]}
+spawn 5s ufo {"position": [416, 272]}
 
-wait 6s inf
+push section
+
+spawn 1s ufo {"position": [416, 152]}
+spawn 2s ufo {"position": [416, 152]}
+spawn 3s ufo {"position": [416, 32]}
+spawn 3s ufo {"position": [416, 272]}
+spawn 4s ufo {"position": [416, 32]}
+spawn 4s ufo {"position": [416, 272]}
+spawn 5s ufo {"position": [416, 32]}
+spawn 5s ufo {"position": [416, 112]}
+spawn 5s ufo {"position": [416, 192]}
+spawn 5s ufo {"position": [416, 272]}
+
+push section
+
+toast 1s 6s boss_label
+spawn 2s boss1 {"position": [432, 152]}
 
 # swarm drones = drone, 5, 0.2 sec (delay)
 # item wormhole

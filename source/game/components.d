@@ -15,6 +15,7 @@ struct DisplayComponent
 {
 	Crunch.Image sprite;
 	vec4 color = vec4(1);
+	vec2 scale = vec2(1);
 }
 
 struct ComplexDisplayComponent
