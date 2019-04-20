@@ -1,6 +1,6 @@
 {
 	"sprite": "lazer",
-	"velocity": [600, 0],
+	"velocity": [300, 0],
 	"hp": 1,
 	"circles": [
 		{

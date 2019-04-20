@@ -1,0 +1,13 @@
+{
+	"sprite": "bullet",
+	"velocity": [200, 0],
+	"scale": [2, 2],
+	"length": 1,
+	"hp": 1,
+	"circles": [
+		{
+			"mask": "enemyShot",
+			"radius": 1
+		}
+	]
+}

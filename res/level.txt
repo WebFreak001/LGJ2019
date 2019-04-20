@@ -1,9 +1,31 @@
 generator ufo from res/parts/ufo.json
+generator drone from res/parts/drone.json
 generator lazer from res/parts/lazer.json
 
-patch ufo {"bullet_interval": 1}
+generator bullet1 from res/parts/bullet.json
+generator bullet2 from res/parts/bullet.json
+generator bullet3 from res/parts/bullet.json
+generator bullet4 from res/parts/bullet.json
+generator bullet5 from res/parts/bullet.json
+generator bullet6 from res/parts/bullet.json
+
+patch lazer {"interval": 1}
+
+patch bullet1 {"interval": 1, "offset": 0,   "velocity": [400, 0]}
+patch bullet2 {"interval": 1, "offset": 0.1, "velocity": [200, 346.4102]}
+patch bullet3 {"interval": 1, "offset": 0.2, "velocity": [-200, 346.4102]}
+patch bullet4 {"interval": 1, "offset": 0.3, "velocity": [-400, 0]}
+patch bullet5 {"interval": 1, "offset": 0.4, "velocity": [-200, -346.4102]}
+patch bullet6 {"interval": 1, "offset": 0.5, "velocity": [200, -346.4102]}
 
 bullets ufo lazer
+
+bullets drone bullet1
+bullets drone bullet2
+bullets drone bullet3
+bullets drone bullet4
+bullets drone bullet5
+bullets drone bullet6
 
 unset generator lazer
 
@@ -13,8 +35,8 @@ spawn 3s ufo {"position": [416, 32]}
 spawn 3s ufo {"position": [416, 152]}
 spawn 3s ufo {"position": [416, 272]}
 
-spawn 5s ufo {"position": [416, 92]}
-spawn 5s ufo {"position": [416, 212]}
+spawn 5s drone {"position": [416, 92]}
+spawn 5s drone {"position": [416, 212]}
 
 push section
 

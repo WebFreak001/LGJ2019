@@ -139,7 +139,7 @@ struct Level
 				{
 					if (auto gen = genName in generators)
 					{
-						dst.bullets = *gen;
+						dst.bullets ~= *gen;
 					}
 					else
 					{

@@ -273,7 +273,7 @@ class GenericEntityBuilder
 {
 	Crunch.Image sprite;
 	vec2 position;
-	double offset = 0, length = 0;
+	double offset = 0, length = 0, interval = 0;
 	vec2 velocity = vec2(0);
 	InterpolationFunc interpolation = InterpolationFuncs.linear;
 	vec2 scale = vec2(1);
@@ -285,8 +285,7 @@ class GenericEntityBuilder
 
 	CollisionComponent.Circle[] circles;
 
-	double bulletInterval = 1;
-	GenericEntityBuilder bullets;
+	GenericEntityBuilder[] bullets;
 
 	bool setJson(string property, JSONValue json)
 	{
@@ -321,6 +320,8 @@ class GenericEntityBuilder
 			return readNumeric(property, json, offset);
 		case "length":
 			return readNumeric(property, json, length);
+		case "interval":
+			return readNumeric(property, json, interval);
 		case "rotation":
 			return readNumeric(property, json, rotation);
 		case "max_hp":
@@ -333,8 +334,6 @@ class GenericEntityBuilder
 		case "mask":
 		case "type":
 			return readCollisionMask(property, json, collision);
-		case "bullet_interval":
-			return readNumeric(property, json, bulletInterval);
 		case "circles":
 			if (json.type == JSONType.null_)
 			{
@@ -436,25 +435,29 @@ class GenericEntityBuilder
 			world.endNow(start, entity.historyID);
 		};
 
-		if (bulletInterval > 0 && bullets !is null)
-			makeChildEffects(event, entity, world.now + bulletInterval);
+		foreach (ref bulletGen; bullets)
+			makeChildEffects(event, entity, bulletGen, world.now + bulletGen.offset + bulletGen.interval);
 	}
 
-	void makeChildEffects(ref Section.Event event, GenericMovingEntity entity, double time)
+	void makeChildEffects(ref Section.Event event, GenericMovingEntity entity,
+			GenericEntityBuilder bullets, double time)
 	{
-		world.put(History.makeTrigger(time, { makeChildEffects(event, entity, time); }, {
+		world.put(History.makeTrigger(time, {
+				makeChildEffects(event, entity, bullets, time);
+			}, {
 				if (event.finished)
 					return;
-				shootChild(entity);
-				makeChildEffects(event, entity, world.now + bulletInterval);
+				shootChild(entity, bullets);
+				makeChildEffects(event, entity, bullets, world.now + bullets.interval);
 			}, entity.historyID, -1));
 	}
 
-	void shootChild(GenericMovingEntity parent)
+	void shootChild(GenericMovingEntity parent, GenericEntityBuilder bullets)
 	{
 		parent.edit!((ref parent) {
 			vec2 start = parent.read!PositionComponent.position + vec2(0, 16);
 			const bvelocity = bullets.velocity;
+			const offset = bullets.offset;
 
 			if (isNaN(bullets.rotation))
 			{
@@ -471,8 +474,10 @@ class GenericEntityBuilder
 			}
 
 			bullets.position = start;
+			bullets.offset = 0;
 			bullets.build();
 			bullets.velocity = bvelocity;
+			bullets.offset = offset;
 		});
 	}
 
